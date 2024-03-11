@@ -1,4 +1,4 @@
-# Exercise 3: The Turtlebot 4
+# Tutorial 3: The Turtlebot 4
 
 #### Development of Inteligent Systems, 2024
 
@@ -19,20 +19,20 @@ Here we present the steps needed for installing the Turtlebot 4 packages on a na
 
 0. Update package manager:
 
-    sudo apt update
+     sudo apt update
 
 1. Install Ignition Gazebo Fortress
 
-    sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
-    wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
-    sudo apt-get update && sudo apt-get install ignition-fortress
+     sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+     wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+     sudo apt-get update && sudo apt-get install ignition-fortress
 
 2. Turtlebot related packages:
 
-    sudo apt install ros-humble-turtlebot4-simulator ros-humble-turtlebot4-description \
-    ros-humble-turtlebot4-msgs ros-humble-turtlebot4-navigation \
-    ros-humble-turtlebot4-node ros-humble-turtlebot4-desktop \
-    ros-humble-laser-filters ros-humble-turtle-tf2-py
+     sudo apt install ros-humble-turtlebot4-simulator ros-humble-turtlebot4-description \
+     ros-humble-turtlebot4-msgs ros-humble-turtlebot4-navigation \
+     ros-humble-turtlebot4-node ros-humble-turtlebot4-desktop \
+     ros-humble-laser-filters ros-humble-turtle-tf2-py
 
 3. Download and build `dis_tutorial3`
 
@@ -82,7 +82,7 @@ You can send navigation goal to the robot from RViz. You can load your own custo
 
 You can also give it as a parameter in the command line, but who wants to do that.
 
-# Face Detection and Localization
+### Face Detection and Localization
 
 Is part of your first Task, you need to detect the faces in the polygon. For this, you need to install some additional Python packages:
 
