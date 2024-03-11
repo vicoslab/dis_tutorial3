@@ -18,22 +18,22 @@ You can use [the official TB4 manual](https://turtlebot.github.io/turtlebot4-use
 Here we present the steps needed for installing the Turtlebot 4 packages on a native Ubuntu 22.04 + ROS2 Humble. For WSL/V/Docker installation you will need to check the instructions linked above, and possible other sources.
 
 0. Update package manager:
-
-     sudo apt update
-
+```
+    sudo apt update
+```
 1. Install Ignition Gazebo Fortress
-
-     sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
-     wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
-     sudo apt-get update && sudo apt-get install ignition-fortress
-
+```
+    sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+    wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+    sudo apt-get update && sudo apt-get install ignition-fortress
+```
 2. Turtlebot related packages:
-
-     sudo apt install ros-humble-turtlebot4-simulator ros-humble-turtlebot4-description \
-     ros-humble-turtlebot4-msgs ros-humble-turtlebot4-navigation \
-     ros-humble-turtlebot4-node ros-humble-turtlebot4-desktop \
-     ros-humble-laser-filters ros-humble-turtle-tf2-py
-
+```
+    sudo apt install ros-humble-turtlebot4-simulator ros-humble-turtlebot4-description \
+    ros-humble-turtlebot4-msgs ros-humble-turtlebot4-navigation \
+    ros-humble-turtlebot4-node ros-humble-turtlebot4-desktop \
+    ros-humble-laser-filters ros-humble-turtle-tf2-py
+```
 3. Download and build `dis_tutorial3`
 
 > **Keep in mind:** The same hardware is used not just by your group but also by other students this year as well as in future years. So pay attention to the maintenance instructions to maximize the life expectancy of components. Frequent violations of these instructions will be sanctioned by reducing the grade of your group.
