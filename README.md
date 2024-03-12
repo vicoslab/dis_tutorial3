@@ -8,7 +8,7 @@ In this exercise, you will familiarize yourself with the Turtlebot 4 robot platf
 3. **Slamtec RPLIDAR-A1 2D** triangulation lidar sensor
 4. **Raspberry Pi 4 SBC** with a Turtlebot HAT board
 
-![turtlebot](figures/turtlebot.png)
+![turtlebot](figs/turtlebot.png)
 *Image source: [Clearpath Robotics](https://turtlebot.github.io/turtlebot4-user-manual/overview/features.html)*
 
 You can use [the official TB4 manual](https://turtlebot.github.io/turtlebot4-user-manual/) as a reference guide.
@@ -46,7 +46,9 @@ Now close all the running nodes and launch the Turtlebot 4 simulation + SLAM + r
 
     ros2 launch dis_tutorial3 sim_turtlebot_slam.launch.py
 
-This will start the necessary nodes for building a map.
+This will start the necessary nodes for building a map. You should see the Ignition Gazebo Fortress simulator with custom interface for the Turtlebot4, and the RViz tool.
+
+![simulation and slam](figs/sim_slam.png "The simulation and RViz during SLAM")
 
 ### Building a map
 

@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright 2021 Samsung Research America
+# Mofidied from Samsung Research America
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -225,8 +225,8 @@ class RobotCommander(Node):
     def waitUntilNav2Active(self, navigator='bt_navigator', localizer='amcl'):
         """Block until the full navigation system is up and running."""
         self._waitForNodeToActivate(localizer)
-        if localizer == 'amcl':
-            self._waitForInitialPose()
+        if not self.initial_pose_received:
+            time.sleep(1)
         self._waitForNodeToActivate(navigator)
         self.info('Nav2 is ready for use!')
         return
@@ -318,11 +318,15 @@ def main(args=None):
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = rc.get_clock().now().to_msg()
 
-    goal_pose.pose.position.x = 1
-    goal_pose.pose.position.y = 1
+    goal_pose.pose.position.x = 2.6
+    goal_pose.pose.position.y = -1.3
     goal_pose.pose.orientation = rc.YawToQuaternion(0.57)
 
     rc.goToPose(goal_pose)
+
+    while not rc.isTaskComplete():
+        rc.info("Waiting for the task to complete...")
+        time.sleep(1)
 
     rc.spin(-0.57)
 
