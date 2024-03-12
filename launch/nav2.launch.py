@@ -36,7 +36,7 @@ ARGUMENTS = [
                           description='Use sim time'),
     DeclareLaunchArgument('params_file',
                           default_value=PathJoinSubstitution([
-                              get_package_share_directory('dis_sim'),
+                              get_package_share_directory('dis_tutorial3'),
                               'config',
                               'nav2.yaml'
                               ]),
