@@ -127,7 +127,7 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([robot_description_launch]),
             launch_arguments=[('model', LaunchConfiguration('model')),
-                              ('use_sim_time', LaunchConfiguration('use_sim_time'))]
+                              ('use_sim_time', use_sim_time)]
         ),
 
         # Dock description
@@ -170,21 +170,24 @@ def generate_launch_description():
                 ('model', LaunchConfiguration('model')),
                 ('robot_name', robot_name),
                 ('dock_name', dock_name),
-                ('namespace', namespace)]
+                ('namespace', namespace),
+                ('use_sim_time', use_sim_time)]
         ),
 
         # TurtleBot 4 nodes
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([turtlebot4_node_launch]),
             launch_arguments=[('model', LaunchConfiguration('model')),
-                              ('param_file', turtlebot4_node_yaml_file)]
+                              ('param_file', turtlebot4_node_yaml_file),
+                              ('use_sim_time', use_sim_time)]
         ),
 
         # Create 3 nodes
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([create3_nodes_launch]),
             launch_arguments=[
-                ('namespace', namespace)
+                ('namespace', namespace),
+                ('use_sim_time', use_sim_time)
             ]
         ),
 
@@ -194,6 +197,7 @@ def generate_launch_description():
             launch_arguments=[
                 ('robot_name', robot_name),
                 ('dock_name', dock_name),
+                ('use_sim_time', use_sim_time)
             ]
         ),
 
