@@ -46,7 +46,7 @@ Now close all the running nodes and launch the Turtlebot 4 simulation + SLAM + r
 
     ros2 launch dis_tutorial3 sim_turtlebot_slam.launch.py
 
-This will start the necessary nodes for building a map. You should see the Ignition Gazebo Fortress simulator with custom interface for the Turtlebot4, and the RViz tool.
+This will start the necessary nodes for building a map. You should see the Ignition Gazebo Fortress simulator with a custom GUI for the Turtlebot4, and the RViz tool.
 
 ![simulation and slam](figs/sim_slam.png "The simulation and RViz during SLAM")
 
@@ -55,6 +55,14 @@ This will start the necessary nodes for building a map. You should see the Ignit
 To build the map we should move the robot around the polygon using the teleop node:
 
     ros2 run teleop_twist_keyboard teleop_twist_keyboard
+
+You can also use the the GUI in Gazebo:
+
+![keyboard gui](figs/sim_keyboard.png "Keyboard GUI")
+
+Before you move around the robot, make sure to undock it. For now, do this using the GUI:
+
+![undock gui](figs/undock.png "Undock guid")
 
 Now move about the polygon until you get a relatively good map. To build a good map:
  - Move the robot slowly. When the robot is moving quickly it can lose the connection between individual scans or build up too much odometry error between map updates.
@@ -75,6 +83,10 @@ The Turtlebot 4 uses Nav2 which provides perception, planning, control, localiza
 If you have built a map of the polygon we are finally ready to let the robot drive itself. In one terminal start the simulation:
 
     ros2 launch dis_tutorial3 sim_turtlebot_nav.launch.py
+
+You should see RViz with the already loaded map:
+
+![simulation and nav](figs/sim_nav.png "The simulation and RViz during navigation")
 
 You can send navigation goal to the robot from RViz. You can load your own custom map by modifying the `sim_turtlebot_nav.launch.py` launch file:
 
