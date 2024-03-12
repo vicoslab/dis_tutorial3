@@ -115,3 +115,11 @@ This node uses a pretrained YOLOv8 model. It can detect many different categorie
 In the `robot_commander.py` node you have examples of how to send programatically send navigation goals to the robot. Explore the code after running it:
 
     ros2 run dis_tutorial3 robot_commander.py
+
+### Resources
+
+[The official TB4 user manual](https://turtlebot.github.io/turtlebot4-user-manual/)
+[TB4 navigation tutorial](https://turtlebot.github.io/turtlebot4-user-manual/tutorials/turtlebot4_navigator.html)
+[Nav2](https://navigation.ros.org/)
+[TB4 Tutorials](https://github.com/turtlebot/turtlebot4_tutorials)
+[Everything you need](google.com)
