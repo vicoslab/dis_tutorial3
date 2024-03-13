@@ -86,13 +86,13 @@ Once you are satisfied with the map you can save it by executing:
 
 Do not add any extensions to the name of your map, as the map_saver will create two different files for storing map data. The first one is a `.yaml` file containing the name of the image for the map, the origin of the image, the metric length of a pixel in the map and the thresholds for occupied and free space. The other file is a `.pgm` image file (portable gray map) which you can open in most image editors. This is useful for fixing minor imperfections. 
 
-If you have built a good enough map close all running programs.
+When you have built a good enough map, close all running nodes.
 
 ### Navigation
 
 The Turtlebot 4 uses Nav2 which provides perception, planning, control, localization, visualization, and much more to build autonomous systems. This will compute an environmental model from sensor and semantic data, dynamically path plan, compute velocities for motors, avoid obstacles, and structure higher-level robot behaviors. You can find more info about Nav2 [here](https://navigation.ros.org/).
 
-If you have built a map of the polygon we are finally ready to let the robot drive itself. In one terminal start the simulation:
+If you have built a map of the course, we are finally ready to let the robot drive on its own. In one terminal start the simulation:
 
     ros2 launch dis_tutorial3 sim_turtlebot_nav.launch.py
 
@@ -106,17 +106,17 @@ You can send navigation goal to the robot from RViz. You can load your own custo
                           [pkg_dis_tutorial3, 'maps', 'map.yaml']),
                           description='Full path to map yaml file to load')
 
-You can also give it as a parameter in the command line, but who wants to do that.
+You can also give it as a parameter in the command line if you wish.
 
 ### Face Detection and Localization
 
-Is part of your first Task, you need to detect the faces in the polygon. For this, you need to install some additional Python packages:
+As part of Task 1, you need to detect the faces in the polygon. For this, you need to install some additional Python packages:
 
     pip install ultralytics
     pip install opencv-python
     pip install numpy
 
-Then you can run the person detector node, which send marker to RViz at the detected locations:
+Then you can run the person detector node, which sends a marker to RViz at the detected locations:
 
     ros2 run dis_tutorial3 detect_people.py
 
@@ -124,7 +124,7 @@ This node uses a pretrained YOLOv8 model. It can detect many different categorie
 
 ### Sending movement goals from a node
 
-In the `robot_commander.py` node you have examples of how to send programatically send navigation goals to the robot. Explore the code after running it:
+In the `robot_commander.py` node you have examples of how to programatically send navigation goals to the robot. Explore the code after running it:
 
     ros2 run dis_tutorial3 robot_commander.py
 
