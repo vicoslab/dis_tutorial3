@@ -108,6 +108,20 @@ You can send navigation goal to the robot from RViz. You can load your own custo
 
 You can also give it as a parameter in the command line if you wish.
 
+### Testing with different positions of faces
+
+There are three worlds in this repository: `dis.sdf`, `demo1.sdf` and `demo2.sdf`. The only differences between the worlds are the positions of the faces, for testing your solution for Task1. Since the worlds are geometrically the same, you can use the same map on all of them. By default the `dis.sdf` world is loaded. To load a different world, you can add the `world` argument in the `launch` command e.g.:
+
+```
+    ros2 launch dis_tutorial3 sim_turtlebot_slam.launch.py world:=demo1
+```
+You can also change the `default_value` of the `world` in the `.launch` file itself, for example in `sim_turtlebot_slam.launch.py`:
+
+```
+    DeclareLaunchArgument('world', default_value='demo1',
+                          description='Ignition World'),
+```
+
 ### Face Detection and Localization
 
 As part of Task 1, you need to detect the faces in the polygon. For this, you need to install some additional Python packages:

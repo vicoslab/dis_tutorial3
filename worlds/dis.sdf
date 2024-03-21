@@ -62,7 +62,7 @@
 					<visual name='ground_visual'>
 						<geometry>
 							<mesh>
-								<uri>file://meshes/map.dae</uri>
+								<uri>file://dis_meshes/map.dae</uri>
 							</mesh>
 						</geometry>
 					</visual>
@@ -70,7 +70,7 @@
           <collision name='ground_collision'>
               <geometry>
                   <mesh>
-                      <uri>file://meshes/map_colliders.dae</uri>
+                      <uri>file://dis_meshes/map_colliders.dae</uri>
                   </mesh>
               </geometry>
           </collision>
