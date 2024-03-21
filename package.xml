@@ -3,8 +3,12 @@
 <package format="3">
   <name>dis_tutorial3</name>
   <version>0.0.1</version>
-  <description>DIS tutorial 3 packages - demonstrating basic ROS2 capabilities.</description>
-  <maintainer email="matej.dobrevski@fri.uni-lj.si">vicos</maintainer>
+  <description>DIS tutorial 3 packages - Simulation of Turtlebot4 in a custom obstacle course.</description>
+  <maintainer email="matej.dobrevski@fri.uni-lj.si">Matej</maintainer>
+  <maintainer email="vid.rijavec@fri.uni-lj.si">Vid</maintainer>
+  <maintainer email="jon.muhovic@fe.uni-lj.si">Jon</maintainer>
+
+
   <license>Apache-2.0</license>
 
   <depend>rclpy</depend>
