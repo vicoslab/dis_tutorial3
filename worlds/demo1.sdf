@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='ASCII'?>
 <sdf version='1.7'>
-  <world name='dis'>
+  <world name='demo1'>
     <physics name='1ms' type='ignored'>
         <max_step_size>0.003</max_step_size>
         <real_time_factor>1</real_time_factor>
