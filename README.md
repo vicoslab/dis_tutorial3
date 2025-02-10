@@ -1,6 +1,6 @@
 # Tutorial 3: The Turtlebot 4
 
-#### Development of Inteligent Systems, 2024
+#### Development of Intelligent Systems, 2024
 
 In this exercise, you will familiarize yourself with the Turtlebot 4 robot platform that you will be using throughout the course for practical work. The robot is composed of the:
 1. **iRobot Create 3** platform (based on the Roomba i-series vacuum cleaners)
