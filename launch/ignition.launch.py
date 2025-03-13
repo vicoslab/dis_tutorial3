@@ -86,6 +86,7 @@ def generate_launch_description():
         launch_arguments=[
             ('ign_args', [LaunchConfiguration('world'),
                           '.sdf',
+                          ' -r',
                           ' -v 4',
                           ' --gui-config ',
                           PathJoinSubstitution(
