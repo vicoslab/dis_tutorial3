@@ -1,3 +1,4 @@
+
 # Tutorial 3: The Turtlebot 4
 
 #### Development of Intelligent Systems, 2024
@@ -64,7 +65,7 @@ If you do not have a dedicated GPU the simulation might run slow. If the Real Ti
 
 ### Building a map
 
-To build the map we should move the robot around the polygon using the teleop node:
+To build the map we should move the robot around the course using the teleop node:
 
     ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
@@ -76,7 +77,7 @@ Before you move around the robot, make sure to undock it. For now, do this using
 
 ![undock gui](figs/undock.png "Undock guid")
 
-Now move about the polygon until you get a relatively good map. To build a good map:
+Now move about the course until you get a relatively good map. To build a good map:
  - Move the robot slowly. When the robot is moving quickly it can lose the connection between individual scans or build up too much odometry error between map updates.
 - Observe the current state that is shown in Rviz. The map is not refreshed in real time but rather in steps therefore make sure that the map has indeed been updated before moving on.
 
@@ -124,7 +125,7 @@ You can also change the `default_value` of the `world` in the `.launch` file its
 
 ### Face Detection and Localization
 
-As part of Task 1, you need to detect the faces in the polygon. For this, you need to install some additional Python packages:
+As part of Task 1, you need to detect the faces in the course. For this, you need to install some additional Python packages:
 
     pip install ultralytics
     pip install opencv-python
@@ -141,6 +142,10 @@ This node uses a pretrained YOLOv8 model. It can detect many different categorie
 In the `robot_commander.py` node you have examples of how to programatically send navigation goals to the robot. Explore the code after running it:
 
     ros2 run dis_tutorial3 robot_commander.py
+
+# Homework 3
+
+Build a map of the course and save it to the disk. Then, load the map and drive the robot around, detect faces and save their positions. Finally, write a script that moves the robot between the positions of the detected faces (you can modify the `robot_commander.py` script for that).
 
 ### Resources
 
