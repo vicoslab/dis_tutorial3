@@ -129,7 +129,7 @@ As part of Task 1, you need to detect the faces in the course. For this, you nee
 
     pip install ultralytics
     pip install opencv-python
-    pip install numpy
+    pip install "numpy<2"
 
 Then you can run the person detector node, which sends a marker to RViz at the detected locations:
 
