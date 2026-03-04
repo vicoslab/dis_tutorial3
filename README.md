@@ -170,15 +170,29 @@ DeclareLaunchArgument(
 )
 ```
 
-You can also set parameter in the command line, e.g. `ros2 launch dis_tutorial3 sim_turtlebot_nav.launch.py map:=/home/rins/map.yaml world=task1`. 
+You can also set parameter in the command line, e.g. `ros2 launch dis_tutorial3 sim_turtlebot_nav.launch.py map:=/home/rins/map.yaml`. 
 
 ### Testing with different positions of faces
 
-There are three worlds in this repository: `dis.sdf`, `demo1.sdf` and `demo2.sdf`. The only differences between the worlds are the positions of the faces, for testing your solution for Task1. Since the worlds are geometrically the same, you can use the same map on all of them. By default the `dis.sdf` world is loaded. To load a different world, you can add the `world` argument in the `launch` command e.g.:
+There are various worlds from previous years in this repository which you can explore to get a feel for what to expect: 
+- `empty.sdf`
+- `dis.sdf`
+- `task1.sdf`
+- `task2.sdf`
+- `demo1.sdf`
+- `demo2.sdf`
+- `demo3.sdf`
+- `demo4.sdf`
+- `bird_demo1.sdf`
+- `bird_demo2.sdf`
+- `bird_demo3.sdf`
+
+The default world is currently set to `bird_demo1`. To load a different world, you can add the `world` argument in the `launch` command without any prefix e.g.:
 
 ```bash
 ros2 launch dis_tutorial3 sim_turtlebot_slam.launch.py world:=demo1
 ```
+
 You can also change the `default_value` of the `world` in the `.launch` file itself, for example in `sim_turtlebot_slam.launch.py`:
 
 ```python
@@ -199,7 +213,6 @@ pip install ultralytics --break-system-packages
 # remove pip's numpy 2.4.2, since it breaks opencv ROS compatibility, this reverts back to using numpy 1.26.4' from apt which will work fine
 pip uninstall numpy --break-system-packages
 ```
-
 
 Then you can run the person detector node, which sends a marker to RViz at the detected locations:
 
