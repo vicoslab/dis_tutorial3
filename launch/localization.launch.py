@@ -26,13 +26,9 @@ from launch_ros.actions import PushRosNamespace
 
 
 ARGUMENTS = [
-    DeclareLaunchArgument('use_sim_time', default_value='true',
-                          choices=['true', 'false'],
-                          description='Use sim time'),
-    DeclareLaunchArgument('namespace', default_value='',
-                          description='Robot namespace')
+    DeclareLaunchArgument('use_sim_time', default_value='true',choices=['true', 'false'],description='Use sim time'),
+    DeclareLaunchArgument('namespace', default_value='',description='Robot namespace')
 ]
-
 
 def generate_launch_description():
     pkg_dis_tutorial3 = get_package_share_directory('dis_tutorial3')
@@ -40,30 +36,34 @@ def generate_launch_description():
 
     localization_params_arg = DeclareLaunchArgument(
         'params',
-        default_value=PathJoinSubstitution(
-            [pkg_dis_tutorial3, 'config', 'localization.yaml']),
-        description='Localization parameters')
+        default_value=PathJoinSubstitution([pkg_dis_tutorial3, 'config', 'localization.yaml']),
+        description='Localization parameters'
+    )
 
     map_arg = DeclareLaunchArgument(
         'map',
-        default_value=PathJoinSubstitution(
-            [pkg_dis_tutorial3, 'maps', 'map.yaml']),
-        description='Full path to map yaml file to load')
+        default_value=PathJoinSubstitution([pkg_dis_tutorial3, 'maps', 'map.yaml']),
+        description='Full path to map yaml file to load'
+    )
 
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     localization = GroupAction([
         PushRosNamespace(namespace),
-
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution(
-                    [pkg_nav2_bringup, 'launch', 'localization_launch.py'])),
-            launch_arguments={'namespace': namespace,
-                              'map': LaunchConfiguration('map'),
-                              'use_sim_time': use_sim_time,
-                              'params_file': LaunchConfiguration('params')}.items()),
+                    [pkg_nav2_bringup, 'launch', 'localization_launch.py']
+                )
+            ),
+            launch_arguments={
+                'namespace': namespace,
+                'map': LaunchConfiguration('map'),
+                'use_sim_time': use_sim_time,
+                'params_file': LaunchConfiguration('params')
+            }.items()
+        ),
     ])
 
     ld = LaunchDescription(ARGUMENTS)

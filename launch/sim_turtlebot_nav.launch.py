@@ -22,58 +22,37 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 
-
 pkg_dis_tutorial3 = get_package_share_directory('dis_tutorial3')
 
-
 ARGUMENTS = [
-    DeclareLaunchArgument('namespace', default_value='',
-                          description='Robot namespace'),
-    DeclareLaunchArgument('rviz', default_value='true',
-                          choices=['true', 'false'], description='Start rviz.'),
-    DeclareLaunchArgument('world', default_value='task1',
-                          description='Ignition World'),
-    DeclareLaunchArgument('model', default_value='standard',
-                          choices=['standard', 'lite'],
-                          description='Turtlebot4 Model'),
-    DeclareLaunchArgument('map', default_value=PathJoinSubstitution(
-                          [pkg_dis_tutorial3, 'maps', 'map.yaml']),
-                          description='Full path to map yaml file to load'),
+    DeclareLaunchArgument('namespace', default_value='', description='Robot namespace'),
+    DeclareLaunchArgument('rviz', default_value='true', choices=['true', 'false'], description='Start rviz.'),
+    DeclareLaunchArgument('world', default_value='bird_demo1', description='Simulation World'),
+    DeclareLaunchArgument('model', default_value='standard', choices=['standard', 'lite'], description='Turtlebot4 Model'),
+    DeclareLaunchArgument('use_sim_time', default_value='true', choices=['true', 'false'], description='use_sim_time'),
+    DeclareLaunchArgument('map', default_value=PathJoinSubstitution([pkg_dis_tutorial3, 'maps', 'bird_demo.yaml']), description='Full path to map yaml file to load')
 ]
 
 for pose_element in ['x', 'y', 'z', 'yaw']:
-    ARGUMENTS.append(DeclareLaunchArgument(pose_element, default_value='0.0',
-                     description=f'{pose_element} component of the robot pose.'))
+    ARGUMENTS.append(DeclareLaunchArgument(pose_element, default_value='0.0', description=f'{pose_element} component of the robot pose.'))
 
+def generate_launch_description():    
+    # Launch Files
+    gazebo_launch = PathJoinSubstitution([pkg_dis_tutorial3, 'launch', 'sim.launch.py'])
+    robot_spawn_launch = PathJoinSubstitution([pkg_dis_tutorial3, 'launch', 'turtlebot4_spawn.launch.py'])
+    localization_launch = PathJoinSubstitution([pkg_dis_tutorial3, 'launch', 'localization.launch.py'])
+    nav2_launch = PathJoinSubstitution([pkg_dis_tutorial3, 'launch', 'nav2.launch.py'])
 
-def generate_launch_description():
-    # Directories
-    package_dir = get_package_share_directory('dis_tutorial3')
-
-    # Paths
-    ignition_launch = PathJoinSubstitution(
-        [package_dir, 'launch', 'ignition.launch.py'])
-    robot_spawn_launch = PathJoinSubstitution(
-        [package_dir, 'launch', 'turtlebot4_spawn.launch.py'])
-    localization_launch = PathJoinSubstitution(
-        [pkg_dis_tutorial3, 'launch', 'localization.launch.py'])
-    nav2_launch = PathJoinSubstitution(
-        [pkg_dis_tutorial3, 'launch', 'nav2.launch.py'])
-
-    # Launch configurations
-    namespace = LaunchConfiguration('namespace')
-    map_file = LaunchConfiguration('map')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    x, y, z = LaunchConfiguration('x'), LaunchConfiguration('y'), LaunchConfiguration('z')
-    yaw = LaunchConfiguration('yaw')
-
-    ignition = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([ignition_launch]),
+    #Simulator and world
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([gazebo_launch]),
         launch_arguments=[
-            ('world', LaunchConfiguration('world'))
+            ('world', LaunchConfiguration('world')),
+            ('use_sim_time', LaunchConfiguration('use_sim_time'))
         ]
     )
 
+    #Spawn turtlebot in the world
     robot_spawn = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([robot_spawn_launch]),
         launch_arguments=[
@@ -82,16 +61,18 @@ def generate_launch_description():
             ('x', LaunchConfiguration('x')),
             ('y', LaunchConfiguration('y')),
             ('z', LaunchConfiguration('z')),
-            ('yaw', LaunchConfiguration('yaw'))]
+            ('yaw', LaunchConfiguration('yaw')),
+            ('use_sim_time', LaunchConfiguration('use_sim_time'))
+        ]
     )
-
+    
     # Localization
     localization = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([localization_launch]),
         launch_arguments=[
-            ('namespace', namespace),
-            ('use_sim_time', use_sim_time),
-            ('map', map_file),
+            ('namespace', LaunchConfiguration('namespace')),
+            ('use_sim_time', LaunchConfiguration('use_sim_time')),
+            ('map', LaunchConfiguration('map')),
         ]
     )
 
@@ -99,14 +80,15 @@ def generate_launch_description():
     nav2 = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([nav2_launch]),
         launch_arguments=[
-            ('namespace', namespace),
-            ('use_sim_time', use_sim_time)
+            ('namespace', LaunchConfiguration('namespace')),
+            ('use_sim_time', LaunchConfiguration('use_sim_time'))
         ]
     )
 
+
     # Create launch description and add actions
     ld = LaunchDescription(ARGUMENTS)
-    ld.add_action(ignition)
+    ld.add_action(gazebo)
     ld.add_action(robot_spawn)
     ld.add_action(localization)
     ld.add_action(nav2)

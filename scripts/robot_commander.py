@@ -64,20 +64,11 @@ class RobotCommander(Node):
         self.is_docked = None
 
         # ROS2 subscribers
-        self.create_subscription(DockStatus,
-                                 'dock_status',
-                                 self._dockCallback,
-                                 qos_profile_sensor_data)
-        
-        self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                              'amcl_pose',
-                                                              self._amclPoseCallback,
-                                                              amcl_pose_qos)
+        self.create_subscription(DockStatus, 'dock_status', self._dockCallback, qos_profile_sensor_data)
+        self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped, 'amcl_pose', self._amclPoseCallback, amcl_pose_qos)
         
         # ROS2 publishers
-        self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      'initialpose',
-                                                      10)
+        self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped, 'initialpose', 10)
         
         # ROS2 Action clients
         self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
@@ -318,8 +309,8 @@ def main(args=None):
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = rc.get_clock().now().to_msg()
 
-    goal_pose.pose.position.x = 2.6
-    goal_pose.pose.position.y = -1.3
+    goal_pose.pose.position.x = 0.8
+    goal_pose.pose.position.y = 4.4
     goal_pose.pose.orientation = rc.YawToQuaternion(0.57)
 
     rc.goToPose(goal_pose)

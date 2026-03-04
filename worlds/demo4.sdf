@@ -44,6 +44,7 @@
     <model name='map'>
 			<pose>0 0 0 0 0 0</pose>
 			<model name='map'>
+                <static>true</static>
 				<pose>0 0 0 0 0 0</pose>
 				<link name='ground_link'>
 					<inertial>

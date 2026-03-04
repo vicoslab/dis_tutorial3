@@ -30,19 +30,12 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import PushRosNamespace, SetRemap
 
 
+pkg_dis_tutorial3 = get_package_share_directory('dis_tutorial3')
+
 ARGUMENTS = [
-    DeclareLaunchArgument('use_sim_time', default_value='false',
-                          choices=['true', 'false'],
-                          description='Use sim time'),
-    DeclareLaunchArgument('params_file',
-                          default_value=PathJoinSubstitution([
-                              get_package_share_directory('dis_tutorial3'),
-                              'config',
-                              'nav2.yaml'
-                              ]),
-                          description='Nav2 parameters'),
-    DeclareLaunchArgument('namespace', default_value='',
-                          description='Robot namespace')
+    DeclareLaunchArgument('use_sim_time', default_value='false',choices=['true', 'false'], description='Use sim time'),
+    DeclareLaunchArgument('params_file',  default_value=PathJoinSubstitution([pkg_dis_tutorial3,'config','nav2.yaml']), description='Nav2 parameters'),
+    DeclareLaunchArgument('namespace', default_value='', description='Robot namespace')
 ]
 
 
@@ -57,8 +50,7 @@ def launch_setup(context, *args, **kwargs):
     if (namespace_str and not namespace_str.startswith('/')):
         namespace_str = '/' + namespace_str
 
-    launch_nav2 = PathJoinSubstitution(
-        [pkg_nav2_bringup, 'launch', 'navigation_launch.py'])
+    launch_nav2 = PathJoinSubstitution([pkg_nav2_bringup, 'launch', 'navigation_launch.py'])
 
     nav2 = GroupAction([
         PushRosNamespace(namespace),

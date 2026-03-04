@@ -18,7 +18,7 @@
     <plugin name='ignition::gazebo::systems::Contact' filename='ignition-gazebo-contact-system' />
 
     <model name='ground_plane'>
-      <static>1</static>
+      <static>true</static>
       <link name='link'>
         <collision name='collision'>
           <geometry>

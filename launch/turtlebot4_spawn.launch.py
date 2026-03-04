@@ -30,26 +30,10 @@ from launch_ros.actions import Node, PushRosNamespace
 
 
 ARGUMENTS = [
-    DeclareLaunchArgument('rviz', default_value='false',
-                          choices=['true', 'false'],
-                          description='Start rviz.'),
-    DeclareLaunchArgument('use_sim_time', default_value='true',
-                          choices=['true', 'false'],
-                          description='use_sim_time'),
-    DeclareLaunchArgument('model', default_value='standard',
-                          choices=['standard', 'lite'],
-                          description='Turtlebot4 Model'),
-    DeclareLaunchArgument('namespace', default_value='',
-                          description='Robot namespace'),
-    DeclareLaunchArgument('localization', default_value='false',
-                          choices=['true', 'false'],
-                          description='Whether to launch localization'),
-    DeclareLaunchArgument('slam', default_value='false',
-                          choices=['true', 'false'],
-                          description='Whether to launch SLAM'),
-    DeclareLaunchArgument('nav2', default_value='false',
-                          choices=['true', 'false'],
-                          description='Whether to launch Nav2'),
+    DeclareLaunchArgument('rviz', default_value='false',choices=['true', 'false'],description='Start rviz.'),
+    DeclareLaunchArgument('use_sim_time', default_value='true',choices=['true', 'false'],description='use_sim_time'),
+    DeclareLaunchArgument('model', default_value='standard',choices=['standard', 'lite'],description='Turtlebot4 Model'),
+    DeclareLaunchArgument('namespace', default_value='', description='Robot namespace')
 ]
 
 for pose_element in ['x', 'y', 'z', 'yaw']:
@@ -58,45 +42,30 @@ for pose_element in ['x', 'y', 'z', 'yaw']:
 
 
 def generate_launch_description():
-
     # Directories
-    pkg_dis_tutorial3 = get_package_share_directory(
-        'dis_tutorial3')
-    pkg_turtlebot4_navigation = get_package_share_directory(
-        'turtlebot4_navigation')
-    pkg_turtlebot4_ignition_bringup = get_package_share_directory(
-        'turtlebot4_ignition_bringup')
-    pkg_turtlebot4_description = get_package_share_directory(
-        'turtlebot4_description')
-    pkg_turtlebot4_viz = get_package_share_directory(
-        'turtlebot4_viz')
-    pkg_irobot_create_common_bringup = get_package_share_directory(
-        'irobot_create_common_bringup')
-    pkg_irobot_create_ignition_bringup = get_package_share_directory(
-        'irobot_create_ignition_bringup')
+    pkg_dis_tutorial3 = get_package_share_directory('dis_tutorial3')
+    pkg_turtlebot4_gz_bringup = get_package_share_directory('turtlebot4_gz_bringup')
+    pkg_turtlebot4_description = get_package_share_directory('turtlebot4_description')
+    pkg_turtlebot4_viz = get_package_share_directory('turtlebot4_viz')
+    pkg_turtlebot4_navigation = get_package_share_directory('turtlebot4_navigation')
+    pkg_irobot_create_common_bringup = get_package_share_directory('irobot_create_common_bringup')
+    pkg_irobot_create_gz_bringup = get_package_share_directory('irobot_create_gz_bringup')
 
     # Paths
-    turtlebot4_ros_ign_bridge_launch = PathJoinSubstitution(
-        [pkg_turtlebot4_ignition_bringup, 'launch', 'ros_ign_bridge.launch.py'])
-    rviz_launch = PathJoinSubstitution(
-        [pkg_turtlebot4_viz, 'launch', 'view_robot.launch.py'])
-    turtlebot4_node_launch = PathJoinSubstitution(
-        [pkg_turtlebot4_ignition_bringup, 'launch', 'turtlebot4_nodes.launch.py'])
-    create3_nodes_launch = PathJoinSubstitution(
-        [pkg_irobot_create_common_bringup, 'launch', 'create3_nodes.launch.py'])
-    create3_ignition_nodes_launch = PathJoinSubstitution(
-        [pkg_irobot_create_ignition_bringup, 'launch', 'create3_ignition_nodes.launch.py'])
-    robot_description_launch = PathJoinSubstitution(
-        [pkg_turtlebot4_description, 'launch', 'robot_description.launch.py'])
-    dock_description_launch = PathJoinSubstitution(
-        [pkg_irobot_create_common_bringup, 'launch', 'dock_description.launch.py'])
+    turtlebot4_ros_gz_bridge_launch = PathJoinSubstitution([pkg_turtlebot4_gz_bringup, 'launch', 'ros_gz_bridge.launch.py'])
+    rviz_launch = PathJoinSubstitution([pkg_turtlebot4_viz, 'launch', 'view_navigation.launch.py'])
+    turtlebot4_node_launch = PathJoinSubstitution([pkg_turtlebot4_gz_bringup, 'launch', 'turtlebot4_nodes.launch.py'])
+    create3_nodes_launch = PathJoinSubstitution([pkg_irobot_create_common_bringup, 'launch', 'create3_nodes.launch.py'])
+    create3_gz_nodes_launch = PathJoinSubstitution([pkg_irobot_create_gz_bringup, 'launch', 'create3_gz_nodes.launch.py'])
+    robot_description_launch = PathJoinSubstitution([pkg_turtlebot4_description, 'launch', 'robot_description.launch.py'])
+    dock_description_launch = PathJoinSubstitution([pkg_irobot_create_common_bringup, 'launch', 'dock_description.launch.py'])
 
     # Parameters
     param_file_cmd = DeclareLaunchArgument(
         'param_file',
-        default_value=PathJoinSubstitution(
-            [pkg_turtlebot4_ignition_bringup, 'config', 'turtlebot4_node.yaml']),
-        description='Turtlebot4 Robot param file')
+        default_value=PathJoinSubstitution([pkg_turtlebot4_gz_bringup, 'config', 'turtlebot4_node.yaml']),
+        description='Turtlebot4 Robot param file'
+    )
 
     # Launch configurations
     namespace = LaunchConfiguration('namespace')
@@ -104,21 +73,7 @@ def generate_launch_description():
     x, y, z = LaunchConfiguration('x'), LaunchConfiguration('y'), LaunchConfiguration('z')
     yaw = LaunchConfiguration('yaw')
     turtlebot4_node_yaml_file = LaunchConfiguration('param_file')
-
     robot_name = GetNamespacedName(namespace, 'turtlebot4')
-    dock_name = GetNamespacedName(namespace, 'standard_dock')
-
-    # Calculate dock offset due to yaw rotation
-    dock_offset_x = RotationalOffsetX(0.157, yaw)
-    dock_offset_y = RotationalOffsetY(0.157, yaw)
-    # Spawn dock at robot position + rotational offset
-    x_dock = OffsetParser(x, dock_offset_x)
-    y_dock = OffsetParser(y, dock_offset_y)
-    # Spawn robot slightly clsoer to the floor to reduce the drop
-    # Ensures robot remains properly docked after the drop
-    z_robot = OffsetParser(z, -0.0025)
-    # Rotate dock towards robot
-    yaw_dock = OffsetParser(yaw, 3.1416)
 
     spawn_robot_group_action = GroupAction([
         PushRosNamespace(namespace),
@@ -126,78 +81,59 @@ def generate_launch_description():
         # Robot description
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([robot_description_launch]),
-            launch_arguments=[('model', LaunchConfiguration('model')),
-                              ('use_sim_time', use_sim_time)]
-        ),
-
-        # Dock description
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([dock_description_launch]),
-            # The robot starts docked
-            launch_arguments={'gazebo': 'ignition'}.items(),
+            launch_arguments=[
+                ('model', LaunchConfiguration('model')),
+                ('use_sim_time', LaunchConfiguration('use_sim_time'))
+            ]
         ),
 
         # Spawn TurtleBot 4
         Node(
-            package='ros_ign_gazebo',
+            package='ros_gz_sim',
             executable='create',
-            arguments=['-name', robot_name,
-                       '-x', x,
-                       '-y', y,
-                       '-z', z_robot,
-                       '-Y', yaw,
-                       '-topic', 'robot_description'],
+            arguments=[
+                '-name', robot_name,
+                '-x', x,
+                '-y', y,
+                '-z', z,
+                '-Y', yaw,
+                '-topic', 'robot_description'
+            ],
             output='screen'
         ),
 
-        # Spawn Dock
-        # Node(
-        #     package='ros_ign_gazebo',
-        #     executable='create',
-        #     arguments=['-name', dock_name,
-        #                '-x', x_dock,
-        #                '-y', y_dock,
-        #                '-z', z,
-        #                '-Y', yaw_dock,
-        #                '-topic', 'standard_dock_description'],
-        #     output='screen',
-        # ),
-
         # ROS IGN bridge
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([turtlebot4_ros_ign_bridge_launch]),
+            PythonLaunchDescriptionSource([turtlebot4_ros_gz_bridge_launch]),
             launch_arguments=[
                 ('model', LaunchConfiguration('model')),
                 ('robot_name', robot_name),
-                ('dock_name', dock_name),
-                ('namespace', namespace),
-                ('use_sim_time', use_sim_time)]
+                ('namespace', namespace)
+            ]
         ),
 
         # TurtleBot 4 nodes
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([turtlebot4_node_launch]),
-            launch_arguments=[('model', LaunchConfiguration('model')),
-                              ('param_file', turtlebot4_node_yaml_file),
-                              ('use_sim_time', use_sim_time)]
+            launch_arguments=[
+                ('model', LaunchConfiguration('model')),
+                ('param_file', turtlebot4_node_yaml_file)
+            ]
         ),
 
         # Create 3 nodes
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([create3_nodes_launch]),
             launch_arguments=[
-                ('namespace', namespace),
-                ('use_sim_time', use_sim_time)
+                ('namespace', namespace)
             ]
         ),
 
-        # Create 3 Ignition nodes
+        # Create 3 Gazebo nodes
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([create3_ignition_nodes_launch]),
+            PythonLaunchDescriptionSource([create3_gz_nodes_launch]),
             launch_arguments=[
-                ('robot_name', robot_name),
-                ('dock_name', dock_name),
-                ('use_sim_time', use_sim_time)
+                ('robot_name', robot_name)
             ]
         ),
 
@@ -209,10 +145,11 @@ def generate_launch_description():
             output='screen',
             arguments=[
                 '0', '0', '0', '0', '0', '0.0',
-                'rplidar_link', [robot_name, '/rplidar_link/rplidar']],
+                'rplidar_link', [robot_name, '/rplidar_link/rplidar']
+            ],
             remappings=[
                 ('/tf', 'tf'),
-                ('/tf_static', 'tf_static')
+                ('/tf_static', 'tf_static'),
             ]
         ),
 
@@ -234,7 +171,6 @@ def generate_launch_description():
                 ('/tf_static', 'tf_static'),
             ]
         ),
-
     ])
 
     laser_filter = Node(
@@ -245,7 +181,8 @@ def generate_launch_description():
                 pkg_dis_tutorial3,
                 "config",
                 "laser_filter_chain.yaml",
-        ])],
+            ])
+        ],
         remappings=[
             ('/scan_filtered', 'scan_filtered')
         ]
@@ -256,7 +193,8 @@ def generate_launch_description():
         PythonLaunchDescriptionSource([rviz_launch]),
         launch_arguments=[
             ('namespace', namespace),
-            ('use_sim_time', use_sim_time)],
+            ('use_sim_time', use_sim_time)
+        ],
         condition=IfCondition(LaunchConfiguration('rviz')),
     )
 
