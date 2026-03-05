@@ -21,7 +21,7 @@ if [ -z "$ALL_PIDS" ]; then
 fi
 
 echo "Killing PIDs: $ALL_PIDS"
-echo "$ALL_PIDS" | xargs -r sudo kill -9
+echo "$ALL_PIDS" | xargs -r kill -9
 
 echo "Verifying..."
 echo "--- /opt/ros/jazzy processes ---"
