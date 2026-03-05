@@ -28,6 +28,7 @@ ros-jazzy-turtlebot4-msgs \
 ros-jazzy-turtlebot4-navigation \
 ros-jazzy-turtlebot4-node \
 ros-jazzy-rmw-zenoh-cpp \
+ros-jazzy-laser-filters \
 ros-jazzy-teleop-twist-keyboard
 ```
 2. Install Gazebo Harmonic:
@@ -201,7 +202,23 @@ DeclareLaunchArgument('world', default_value='demo1', description='Ignition Worl
 
 ### Face Detection and Localization
 
-As part of Task 1, you need to detect the faces in the course. For this, you need to install some additional Python packages:
+As part of Task 1, you need to detect the faces in the course. The easiest way to run YOLO models is using the [Ultralytics](https://www.ultralytics.com/) python packages. 
+
+On the lab PCs, we've preinstalled a virtual environment with all needed packages, which you can source using:
+```bash
+source /opt/ultralytics/bin/activate
+```
+
+Then run the person detector node, which sends a marker to RViz at the detected locations:
+
+```bash
+ros2 run dis_tutorial3 detect_people.py
+```
+
+This node uses a pretrained YOLOv8 model. It can detect many different categories, but we are only using the "person" category.
+
+
+On your own machines you can install ultralytics and its dependencies using:
 
 ```bash
 # ROS packages are generally designed to work with apt versions of python packages
@@ -210,17 +227,10 @@ sudo apt install python3-pip python3-opencv python3-numpy ros-jazzy-cv-bridge
 # we need ultralytics from pip, since it's not on apt, which adds an overlay of some additional pip packages
 pip install ultralytics --break-system-packages
 
-# remove pip's numpy 2.4.2, since it breaks opencv ROS compatibility, this reverts back to using numpy 1.26.4' from apt which will work fine
+# remove pip's numpy 2.4.2, since it breaks opencv ROS compatibility, this reverts back to using numpy 1.26.4 from apt which will work fine
 pip uninstall numpy --break-system-packages
 ```
 
-Then you can run the person detector node, which sends a marker to RViz at the detected locations:
-
-```bash
-ros2 run dis_tutorial3 detect_people.py
-```
-
-This node uses a pretrained YOLOv8 model. It can detect many different categories, but we are only using the "person" category.
 
 ### Sending movement goals from a node
 
