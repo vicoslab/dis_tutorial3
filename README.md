@@ -237,9 +237,15 @@ Build a map of the course and save it to the disk. Then, load the map and drive 
 
 ## Resources
 
+Turtlebot4:
 - [The official TB4 user manual](https://turtlebot.github.io/turtlebot4-user-manual/)  
 - [TB4 navigation tutorial](https://turtlebot.github.io/turtlebot4-user-manual/tutorials/turtlebot4_navigator.html)   
-- [Nav2](https://navigation.ros.org/)   
-- [TB4 Tutorials](https://github.com/turtlebot/turtlebot4_tutorials)   
-- [Everything you need](google.com)
+- [TB4 Tutorials](https://github.com/turtlebot/turtlebot4_tutorials)
+
+Slam + Nav:
+- [Slam Toolbox](https://github.com/SteveMacenski/slam_toolbox)
+- [Nav2](https://docs.nav2.org/)   
+
+Etc.
 - [Kimi](https://www.kimi.com/)
+- [Everything you need](google.com)
