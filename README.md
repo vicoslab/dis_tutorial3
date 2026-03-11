@@ -173,38 +173,12 @@ DeclareLaunchArgument(
 
 You can also set parameter in the command line, e.g. `ros2 launch dis_tutorial3 sim_turtlebot_nav.launch.py map:=/home/rins/map.yaml`. 
 
-### Testing with different positions of faces
-
-There are various worlds from previous years in this repository which you can explore to get a feel for what to expect: 
-- `empty.sdf`
-- `dis.sdf`
-- `task1.sdf`
-- `task2.sdf`
-- `demo1.sdf`
-- `demo2.sdf`
-- `demo3.sdf`
-- `demo4.sdf`
-- `bird_demo1.sdf`
-- `bird_demo2.sdf`
-- `bird_demo3.sdf`
-
-The default world is currently set to `bird_demo1`. To load a different world, you can add the `world` argument in the `launch` command without any prefix e.g.:
-
-```bash
-ros2 launch dis_tutorial3 sim_turtlebot_slam.launch.py world:=demo1
-```
-
-You can also change the `default_value` of the `world` in the `.launch` file itself, for example in `sim_turtlebot_slam.launch.py`:
-
-```python
-DeclareLaunchArgument('world', default_value='demo1', description='Ignition World'),
-```
 
 ### Face Detection and Localization
 
 As part of Task 1, you need to detect the faces in the course. The easiest way to run YOLO models is using the [Ultralytics](https://www.ultralytics.com/) python packages. 
 
-On the lab PCs, we've preinstalled a virtual environment with all needed packages, which you can source using:
+On the lab PCs, we've preinstalled a virtual environment with all required packages which you can source using:
 ```bash
 source /opt/ultralytics/bin/activate
 ```
@@ -231,6 +205,28 @@ pip install ultralytics --break-system-packages
 pip uninstall numpy --break-system-packages
 ```
 
+### Testing with different positions of faces
+
+There are various worlds from previous years in this repository (under dis_tutorial3/world/2024 and 2025) which you can explore to get a feel for what to expect.
+
+The default world is currently set to `bird_demo1` (an example world for last year's Task 2). To load a different world, you can add the `world` argument in the `launch` command without any prefix e.g.:
+
+```bash
+ros2 launch dis_tutorial3 sim_turtlebot_slam.launch.py world:=task1_blue_demo
+```
+
+You can also change the `default_value` of the `world` in the `.launch` file itself, for example in `sim_turtlebot_slam.launch.py`:
+
+```python
+DeclareLaunchArgument('world', default_value='task1_blue_demo', description='Ignition World'),
+```
+
+There are three example worlds available for this year's Task1, which use can use to build your map and test run your implementation:
+- `task1_blue_demo`
+- `task1_green_demo`
+- `task1_yellow_demo`
+
+![task_1_sim](figs/task1_worlds.jpg "Three demo worlds")
 
 ### Sending movement goals from a node
 
