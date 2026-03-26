@@ -12,6 +12,8 @@ from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
 from std_srvs.srv import Trigger
 from visualization_msgs.msg import Marker
+from rclpy.executors import MultiThreadedExecutor
+
 
 from robot_commander import RobotCommander, TaskResult
 
@@ -55,8 +57,19 @@ class PatrolPeopleCollector(Node):
             },
         ]
 
+        # Determine the workspace root by looking for colcon_ws
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        parts = script_dir.split(os.sep)
+        if 'colcon_ws' in parts:
+            workspace_idx = parts.index('colcon_ws')
+            workspace_root = os.sep + os.path.join(*parts[:workspace_idx + 1])
+        else:
+            workspace_root = os.path.expanduser('~')
+        
         default_output_file = os.path.join(
-            os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
+            workspace_root,
+            'src',
+            'dis_tutorial3',
             'data',
             'detected_people.json',
         )
@@ -97,13 +110,25 @@ class PatrolPeopleCollector(Node):
         try:
             self.get_logger().info('Waiting for Nav2 to become active...')
             self.robot_commander.waitUntilNav2Active()
+            self.get_logger().info('Nav2 is active. Checking dock status...')
 
-            while self.robot_commander.is_docked is None and rclpy.ok():
+            # Wait until dock_status is received
+            max_dock_wait = 10
+            dock_wait_count = 0
+            while self.robot_commander.is_docked is None and rclpy.ok() and dock_wait_count < max_dock_wait:
                 rclpy.spin_once(self.robot_commander, timeout_sec=0.2)
+                dock_wait_count += 1
 
-            if self.robot_commander.is_docked:
+            if self.robot_commander.is_docked is None:
+                self.get_logger().warn('Dock status never received, assuming not docked and continuing.')
+            elif self.robot_commander.is_docked:
                 self.get_logger().info('Robot is docked, undocking first...')
                 self.robot_commander.undock()
+                self.get_logger().info('Undocking complete.')
+            else:
+                self.get_logger().info('Robot is already undocked.')
+
+            self.get_logger().info(f'Starting patrol of {len(self.predefined_positions)} waypoints...')
 
             for index, target_pose in enumerate(self.predefined_positions, start=1):
                 goal_pose = PoseStamped()
@@ -118,40 +143,67 @@ class PatrolPeopleCollector(Node):
                 goal_pose.pose.orientation.w = float(target_pose['orientation']['w'])
 
                 self.get_logger().info(
-                    f'Visiting predefined position {index}/{len(self.predefined_positions)}: '
-                    f'x={goal_pose.pose.position.x:.2f}, y={goal_pose.pose.position.y:.2f}'
+                    f'[{index}/{len(self.predefined_positions)}] Sending goal to: '
+                    f'x={goal_pose.pose.position.x:.3f}, y={goal_pose.pose.position.y:.3f}, '
+                    f'z={goal_pose.pose.position.z:.3f}'
                 )
+
+                # Reset goal state before sending new goal
+                self.robot_commander.goal_handle = None
+                self.robot_commander.result_future = None
+                self.robot_commander.status = None
 
                 accepted = self.robot_commander.goToPose(goal_pose)
                 if not accepted:
-                    self.get_logger().error(f'Goal {index} was rejected, continuing to next waypoint.')
+                    self.get_logger().error(f'Goal {index} was rejected by Nav2, skipping to next waypoint.')
                     continue
 
+                self.get_logger().info(f'Goal {index} accepted by Nav2, waiting for completion...')
+                
+                # Wait for task completion with periodic logging
+                loop_count = 0
                 while not self.robot_commander.isTaskComplete() and rclpy.ok():
+                    loop_count += 1
+                    if loop_count % 20 == 0:  # Log every 10 seconds (20 * 0.5)
+                        self.get_logger().info(f'Goal {index} still in progress...')
                     time.sleep(0.5)
 
                 result = self.robot_commander.getResult()
                 if result == TaskResult.SUCCEEDED:
-                    self.get_logger().info(f'Waypoint {index} reached.')
+                    self.get_logger().info(f'✓ Waypoint {index} reached successfully.')
                 else:
-                    self.get_logger().warn(f'Waypoint {index} finished with result: {result.name}.')
+                    self.get_logger().warn(f'⚠ Waypoint {index} finished with result: {result.name}')
 
+            self.get_logger().info('All waypoints visited. Persisting marker data...')
             self._persist_markers()
-            self.get_logger().info('Patrol finished. Marker list persisted.')
+            self.get_logger().info(f'Patrol complete! Saved {len(self.saved_markers)} unique markers.')
         except Exception as exc:
-            self.get_logger().error(f'Patrol failed with exception: {exc}')
+            self.get_logger().error(f'Patrol failed with exception: {exc}', exc_info=True)
         finally:
             self.patrol_running = False
 
     def _marker_callback(self, marker_msg: Marker):
+        # Extract and validate marker position
+        x = float(marker_msg.pose.position.x)
+        y = float(marker_msg.pose.position.y)
+        z = float(marker_msg.pose.position.z)
+
+        # Skip markers with invalid (NaN) positions
+        if math.isnan(x) or math.isnan(y) or math.isnan(z):
+            self.get_logger().debug(
+                f'Skipping marker with NaN position: id={marker_msg.id}, '
+                f'x={x}, y={y}, z={z}'
+            )
+            return
+
         marker_record = {
             'id': int(marker_msg.id),
             'frame_id': marker_msg.header.frame_id,
             'stamp_sec': int(marker_msg.header.stamp.sec),
             'stamp_nanosec': int(marker_msg.header.stamp.nanosec),
-            'x': float(marker_msg.pose.position.x),
-            'y': float(marker_msg.pose.position.y),
-            'z': float(marker_msg.pose.position.z),
+            'x': x,
+            'y': y,
+            'z': z,
         }
 
         with self.marker_lock:
@@ -197,17 +249,22 @@ class PatrolPeopleCollector(Node):
         super().destroy_node()
 
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = PatrolPeopleCollector()
 
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+
     try:
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 
 if __name__ == '__main__':
