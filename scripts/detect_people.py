@@ -8,11 +8,18 @@ from sensor_msgs.msg import Image, PointCloud2
 from sensor_msgs_py import point_cloud2 as pc2
 
 from visualization_msgs.msg import Marker
+from geometry_msgs.msg import PointStamped
+
+import tf2_geometry_msgs as tfg
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import numpy as np
 
+from rclpy.duration import Duration
 from ultralytics import YOLO
 
 # from rclpy.parameter import Parameter
@@ -30,21 +37,28 @@ class detect_faces(Node):
 		])
 
 		marker_topic = "/people_marker"
+		new_marker_topic = "/new_people_marker"
 
 		self.detection_color = (0,0,255)
 		self.device = self.get_parameter('device').get_parameter_value().string_value
 
 		self.bridge = CvBridge()
+		self.tf_buffer = Buffer()
+		self.tf_listener = TransformListener(self.tf_buffer, self)
 		self.scan = None
+		self.new_marker_id = 0
 
 		self.rgb_image_sub = self.create_subscription(Image, "/oakd/rgb/preview/image_raw", self.rgb_callback, qos_profile_sensor_data)
 		self.pointcloud_sub = self.create_subscription(PointCloud2, "/oakd/rgb/preview/depth/points", self.pointcloud_callback, qos_profile_sensor_data)
 
 		self.marker_pub = self.create_publisher(Marker, marker_topic, QoSReliabilityPolicy.BEST_EFFORT)
+		self.marker_new_pub = self.create_publisher(Marker, new_marker_topic, QoSReliabilityPolicy.BEST_EFFORT)
 
 		self.model = YOLO("yolov8n.pt")
 
 		self.faces = []
+		self.markers = []
+		self.cluster_centers = []
 
 		self.get_logger().info(f"Node has been initialized! Will publish face markers to {marker_topic}.")
 
@@ -134,7 +148,89 @@ class detect_faces(Node):
 			marker.pose.position.y = float(d[1])
 			marker.pose.position.z = float(d[2])
 
+			#transformation of marker
+			point_in_robot_frame = PointStamped()
+			point_in_robot_frame.header.frame_id = "/base_link"
+			point_in_robot_frame.header.stamp = self.get_clock().now().to_msg()
+
+			point_in_robot_frame.point.x = float(d[0])
+			point_in_robot_frame.point.y = float(d[1])
+			point_in_robot_frame.point.z = float(d[2])
+			time_now = rclpy.time.Time()
+			timeout = Duration(seconds=0.1)
+			print(data.header.frame_id)
+			try:
+				# An example of how you can get a transform from /base_link frame to the /map frame
+				# as it is at time_now, wait for timeout for it to become available
+				trans = self.tf_buffer.lookup_transform("map", data.header.frame_id, time_now, timeout)
+				self.get_logger().info(f"Looks like the transform is available.")
+
+				# Now we apply the transform to transform the point_in_robot_frame to the map frame
+				# The header in the result will be copied from the Header of the transform
+				point_in_map_frame = tfg.do_transform_point(point_in_robot_frame, trans)
+				self.get_logger().info(f"We transformed a PointStamped!")
+
+				# If the transformation exists, create a marker from the point, in order to visualize it in Rviz
+				marker_in_map_frame = self.create_marker(point_in_map_frame, self.new_marker_id)
+
+				# Publish the marker
+				self.marker_new_pub.publish(marker_in_map_frame)
+				self.get_logger().info(f"The marker has been published to /breadcrumbs. You are able to visualize it in Rviz")
+
+				# Increase the marker_id, so we dont overwrite the same marker.
+				self.new_marker_id += 1
+
+			except TransformException as te:
+				self.get_logger().info(f"Cound not get the transform: {te}")
+
+			self.markers.append(marker_in_map_frame)
 			self.marker_pub.publish(marker)
+
+	def merge_clusters(self):
+		centers = []
+		for p in self.markers:
+			p = p.pose.position
+			merged = False
+			for i, c in enumerate(centers):
+				if np.linalg.norm(np.array(p) - np.array(c)) <= 0.8:
+					centers[i] = ((np.array(c) + np.array(p)) / 2.0).tolist()
+					merged = True
+					break
+			if not merged:
+				centers.append(p)
+		self.cluster_centers = centers
+
+	def create_marker(self, point_stamped, marker_id, lifetime=30.0):
+		"""You can see the description of the Marker message here: https://docs.ros2.org/galactic/api/visualization_msgs/msg/Marker.html"""
+		marker = Marker()
+
+		marker.header = point_stamped.header
+
+		marker.type = marker.SPHERE
+		marker.action = marker.ADD
+		marker.id = marker_id
+
+		# Set the scale of the marker
+		scale = 0.1
+		marker.scale.x = scale
+		marker.scale.y = scale
+		marker.scale.z = scale
+
+		# Set the color
+		marker.color.r = 1.0
+		marker.color.g = 0.0
+		marker.color.b = 0.0
+		marker.color.a = 1.0
+
+		# Set the pose of the marker
+		marker.pose.position.x = point_stamped.point.x
+		marker.pose.position.y = point_stamped.point.y
+		marker.pose.position.z = point_stamped.point.z
+
+#		marker.lifetime = 0
+
+		return marker
+
 
 def main():
 	print('Face detection node starting.')
