@@ -4,16 +4,14 @@ import json
 import math
 import os
 import threading
-import time
 from copy import deepcopy
 
 import rclpy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose, PoseArray, PoseStamped
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_srvs.srv import Trigger
-from visualization_msgs.msg import Marker
-from rclpy.executors import MultiThreadedExecutor
-
+from visualization_msgs.msg import Marker, MarkerArray
 
 from robot_commander import RobotCommander, TaskResult
 
@@ -22,10 +20,14 @@ class PatrolPeopleCollector(Node):
     def __init__(self):
         super().__init__('patrol_people_collector')
 
-        self.declare_parameter('dedup_distance_m', 0.25)
+        self.declare_parameter('cluster_radius_m', 0.25)
+        self.declare_parameter('face_goal_offset_m', 0.5)
         self.declare_parameter('markers_output_file', '')
 
-        self.dedup_distance_m = float(self.get_parameter('dedup_distance_m').value)
+        self.cluster_radius_m = float(self.get_parameter('cluster_radius_m').value)
+        self.face_goal_offset_m = float(self.get_parameter('face_goal_offset_m').value)
+
+        # From poz.txt
         self.predefined_positions = [
             {
                 'position': {'x': 0.9992520366512115, 'y': 5.099285747708961, 'z': 0.0},
@@ -41,48 +43,43 @@ class PatrolPeopleCollector(Node):
             },
         ]
 
-        # Determine the workspace root by looking for colcon_ws
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        parts = script_dir.split(os.sep)
-        if 'colcon_ws' in parts:
-            workspace_idx = parts.index('colcon_ws')
-            workspace_root = os.sep + os.path.join(*parts[:workspace_idx + 1])
-        else:
-            workspace_root = os.path.expanduser('~')
-        
-        default_output_file = os.path.join(
-            workspace_root,
-            'src',
-            'dis_tutorial3',
-            'data',
-            'detected_people.json',
-        )
+        # Output path
+        pkg_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        default_output_file = os.path.join(pkg_root, 'data', 'detected_people.json')
         configured_output_file = self.get_parameter('markers_output_file').value
         self.output_file = configured_output_file if configured_output_file else default_output_file
+        os.makedirs(os.path.dirname(self.output_file), exist_ok=True)
 
         self.marker_lock = threading.Lock()
-        self.saved_markers = []
+        self.saved_markers = []  # keep ALL detections
 
         self.patrol_running = False
         self.patrol_thread = None
-
-        self.create_subscription(Marker, '/new_people_marker', self._marker_callback, 10)
-        self.create_service(Trigger, '/start_patrol', self._start_patrol_callback)
+        self.last_clusters = []
+        self.last_face_goals = []
 
         self.robot_commander = RobotCommander(node_name='patrol_robot_commander')
 
-        self.get_logger().info('PatrolPeopleCollector initialized. Service: /start_patrol')
-        self.get_logger().info(f'Markers output file: {self.output_file}')
+        self.create_subscription(Marker, '/new_people_marker', self._marker_callback, 50)
+        self.create_service(Trigger, '/start_patrol', self._start_patrol_callback)
+        self.face_goals_pub = self.create_publisher(PoseArray, '/face_goals', 10)
+        self.face_goals_markers_pub = self.create_publisher(MarkerArray, '/face_goals_markers', 10)
+
+       #self.get_logger().info('PatrolPeopleCollector initialized. Service: /start_patrol')
+        #self.get_logger().info(f'Markers output file: {self.output_file}')
 
     def _start_patrol_callback(self, request, response):
         del request
-
         if self.patrol_running:
             response.success = False
             response.message = 'Patrol already running.'
             return response
 
         self.patrol_running = True
+        self.saved_markers = []
+        self.last_clusters = []
+        self.last_face_goals = []
+
         self.patrol_thread = threading.Thread(target=self._run_patrol, daemon=True)
         self.patrol_thread.start()
 
@@ -92,213 +89,337 @@ class PatrolPeopleCollector(Node):
 
     def _run_patrol(self):
         try:
-            self.get_logger().info('Waiting for Nav2 to become active...')
+            #self.get_logger().info('Waiting for Nav2 to become active...')
             self.robot_commander.waitUntilNav2Active()
-            self.get_logger().info('Nav2 is active. Checking dock status...')
 
-            # Wait until dock_status is received
-            max_dock_wait = 10
-            dock_wait_count = 0
-            while self.robot_commander.is_docked is None and rclpy.ok() and dock_wait_count < max_dock_wait:
-                rclpy.spin_once(self.robot_commander, timeout_sec=0.2)
-                dock_wait_count += 1
+            # Undock if supported by this RobotCommander implementation
+            if hasattr(self.robot_commander, 'undock'):
+                try:
+                    self.robot_commander.undock()
+                    while not self.robot_commander.isTaskComplete():
+                        rclpy.spin_once(self.robot_commander, timeout_sec=0.1)
+                except Exception as e:
+                   # self.get_logger().warn(f'Undock skipped/failed: {e}')
+                   pass
 
-            if self.robot_commander.is_docked is None:
-                self.get_logger().warn('Dock status never received, assuming not docked and continuing.')
-            elif self.robot_commander.is_docked:
-                self.get_logger().info('Robot is docked, undocking first...')
-                self.robot_commander.undock()
-                self.get_logger().info('Undocking complete.')
-            else:
-                self.get_logger().info('Robot is already undocked.')
 
-            self.get_logger().info(f'Starting patrol of {len(self.predefined_positions)} waypoints...')
+            # Visit predefined patrol goals in fixed order
+            for i, p in enumerate(self.predefined_positions, start=1):
+                goal = PoseStamped()
+                goal.header.frame_id = 'map'
+                goal.header.stamp = self.get_clock().now().to_msg()
+                goal.pose.position.x = p['position']['x']
+                goal.pose.position.y = p['position']['y']
+                goal.pose.position.z = p['position']['z']
+                goal.pose.orientation.x = p['orientation']['x']
+                goal.pose.orientation.y = p['orientation']['y']
+                goal.pose.orientation.z = p['orientation']['z']
+                goal.pose.orientation.w = p['orientation']['w']
 
-            for index, target_pose in enumerate(self.predefined_positions, start=1):
-                goal_pose = PoseStamped()
-                goal_pose.header.frame_id = 'map'
-                goal_pose.header.stamp = self.robot_commander.get_clock().now().to_msg()
-                goal_pose.pose.position.x = float(target_pose['position']['x'])
-                goal_pose.pose.position.y = float(target_pose['position']['y'])
-                goal_pose.pose.position.z = float(target_pose['position']['z'])
-                goal_pose.pose.orientation.x = float(target_pose['orientation']['x'])
-                goal_pose.pose.orientation.y = float(target_pose['orientation']['y'])
-                goal_pose.pose.orientation.z = float(target_pose['orientation']['z'])
-                goal_pose.pose.orientation.w = float(target_pose['orientation']['w'])
+                #self.get_logger().info(f'Patrol goal [{i}/{len(self.predefined_positions)}]')
+                self.robot_commander.goToPose(goal)
 
-                self.get_logger().info(
-                    f'[{index}/{len(self.predefined_positions)}] Sending goal to: '
-                    f'x={goal_pose.pose.position.x:.3f}, y={goal_pose.pose.position.y:.3f}, '
-                    f'z={goal_pose.pose.position.z:.3f}'
-                )
+                while not self.robot_commander.isTaskComplete():
+                    rclpy.spin_once(self.robot_commander, timeout_sec=0.1)
 
-                # Reset goal state before sending new goal
-                self.robot_commander.goal_handle = None
-                self.robot_commander.result_future = None
-                self.robot_commander.status = None
+                result = self.robot_commander.getResult()
+                if result != TaskResult.SUCCEEDED:
+                    #self.get_logger().warn(f'Patrol goal {i} failed with result: {result}')
+                    pass
+            # Cluster and create face goals
+            print("kmal bo un line")
+            clusters = self._cluster_markers()
+            self.last_clusters = clusters
+            face_goals = self._build_face_goals_from_clusters(clusters)
+            self.last_face_goals = face_goals
 
-                accepted = self.robot_commander.goToPose(goal_pose)
-                if not accepted:
-                    self.get_logger().error(f'Goal {index} was rejected by Nav2, skipping to next waypoint.')
-                    continue
+            self._publish_face_goals(face_goals)
+            self._publish_face_goal_markers(face_goals, clusters)
 
-                self.get_logger().info(f'Goal {index} accepted by Nav2, waiting for completion...')
-                
-                # Wait for task completion with periodic logging
-                loop_count = 0
-                while not self.robot_commander.isTaskComplete() and rclpy.ok():
-                    loop_count += 1
-                    if loop_count % 20 == 0:  # Log every 10 seconds (20 * 0.5)
-                        self.get_logger().info(f'Goal {index} still in progress...')
-                    time.sleep(0.5)
+            # Visit face goals, greet. Retry mirrored side if failed.
+            for i, (fg, c) in enumerate(zip(face_goals, clusters), start=1):
+                #self.get_logger().info(f'Face goal [{i}/{len(face_goals)}] primary')
+                self.robot_commander.goToPose(fg)
+                while not self.robot_commander.isTaskComplete():
+                    rclpy.spin_once(self.robot_commander, timeout_sec=0.1)
 
                 result = self.robot_commander.getResult()
                 if result == TaskResult.SUCCEEDED:
-                    self.get_logger().info(f'✓ Waypoint {index} reached successfully.')
-                else:
-                    self.get_logger().warn(f'⚠ Waypoint {index} finished with result: {result.name}')
+                    print('hello')
+                    continue
 
-            self.get_logger().info('All waypoints visited. Persisting and clustering marker data...')
+                #self.get_logger().warn(f'Primary face goal {i} failed, trying mirrored side...')
+                alt = self._build_single_face_goal(c, sign=-1.0)
+                self.robot_commander.goToPose(alt)
+                while not self.robot_commander.isTaskComplete():
+                    rclpy.spin_once(self.robot_commander, timeout_sec=0.1)
+
+                result2 = self.robot_commander.getResult()
+                if result2 == TaskResult.SUCCEEDED:
+                    print('hello')
+                else:
+                    #self.get_logger().warn(f'Mirrored face goal {i} also failed: {result2}')
+                    pass
+
             self._persist_markers()
-            self.get_logger().info(f'Patrol complete! Processed {len(self.saved_markers)} total detections.')
-        except Exception as exc:
-            self.get_logger().error(f'Patrol failed with exception: {exc}', exc_info=True)
+            #self.get_logger().info('Patrol + face interaction completed.')
+
+        except Exception as e:
+            #self.get_logger().error(f'Patrol failed with exception: {e}')
+            pass
         finally:
             self.patrol_running = False
 
     def _marker_callback(self, marker_msg: Marker):
-        # Extract and validate marker position
-        x = float(marker_msg.pose.position.x)
-        y = float(marker_msg.pose.position.y)
-        z = float(marker_msg.pose.position.z)
+        # Prefer Marker.points encoding: points[0]=face position, points[1]=face+normal
+        face_x = marker_msg.pose.position.x
+        face_y = marker_msg.pose.position.y
+        face_z = marker_msg.pose.position.z
+        nx, ny, nz = 0.0, 0.0, 0.0
 
-        # Skip markers with invalid (NaN) positions
-        if math.isnan(x) or math.isnan(y) or math.isnan(z):
-            self.get_logger().debug(
-                f'Skipping marker with NaN position: id={marker_msg.id}, '
-                f'x={x}, y={y}, z={z}'
-            )
+        if len(marker_msg.points) >= 2:
+            p0 = marker_msg.points[0]
+            p1 = marker_msg.points[1]
+            face_x, face_y, face_z = p0.x, p0.y, p0.z
+            nx, ny, nz = (p1.x - p0.x), (p1.y - p0.y), (p1.z - p0.z)
+
+        vals = [face_x, face_y, face_z, nx, ny, nz]
+        if any(math.isnan(v) or math.isinf(v) for v in vals):
             return
 
-        marker_record = {
-            'id': int(marker_msg.id),
-            'frame_id': marker_msg.header.frame_id,
-            'stamp_sec': int(marker_msg.header.stamp.sec),
-            'stamp_nanosec': int(marker_msg.header.stamp.nanosec),
-            'x': x,
-            'y': y,
-            'z': z,
-            'normal': {
-                'x': float(marker_msg.pose.orientation.x),
-                'y': float(marker_msg.pose.orientation.y),
-                'z': float(marker_msg.pose.orientation.z),
-            },
+        rec = {
+            'stamp': self.get_clock().now().to_msg().sec,
+            'frame_id': marker_msg.header.frame_id if marker_msg.header.frame_id else 'map',
+            'marker_id': int(marker_msg.id),
+            'position': {'x': float(face_x), 'y': float(face_y), 'z': float(face_z)},
+            'normal': {'x': float(nx), 'y': float(ny), 'z': float(nz)},
         }
 
         with self.marker_lock:
-            self.saved_markers.append(marker_record)
-
-        self.get_logger().debug(
-            f'Saved marker at ({marker_record["x"]:.2f}, {marker_record["y"]:.2f}, {marker_record["z"]:.2f}). '
-            f'Total collected: {len(self.saved_markers)}'
-        )
+            self.saved_markers.append(rec)
 
     def _cluster_markers(self):
-        """
-        Cluster markers using greedy distance-based clustering.
-        Returns list of clusters, each cluster is a list of marker records.
-        """
-        if not self.saved_markers:
-            return []
+        with self.marker_lock:
+            points = deepcopy(self.saved_markers)
 
-        clustering_threshold = self.dedup_distance_m
+        r = self.cluster_radius_m
         clusters = []
-        used_indices = set()
 
-        for i, marker in enumerate(self.saved_markers):
-            if i in used_indices:
+        for m in points:
+            px = m['position']['x']
+            py = m['position']['y']
+            assigned = False
+            for c in clusters:
+                cx = c['center']['x']
+                cy = c['center']['y']
+                if math.hypot(px - cx, py - cy) <= r:
+                    c['markers'].append(m)
+                    c['center'] = self._compute_cluster_center(c['markers'])
+                    assigned = True
+                    break
+
+            if not assigned:
+                clusters.append({
+                    'markers': [m],
+                    'center': {'x': px, 'y': py, 'z': m['position']['z']},
+                })
+
+        clusters.sort(key=lambda c: len(c['markers']), reverse=True)
+        top3 = clusters[:3]
+
+        # enrich with averaged normal
+        for i, c in enumerate(top3, start=1):
+            print("kva se dogaja")
+            n = self._compute_cluster_normal(c['markers'])
+            c['cluster_id'] = i
+            c['size'] = len(c['markers'])
+            c['normal'] = n
+
+        return top3
+
+    def _compute_cluster_center(self, cluster_markers):
+        n = len(cluster_markers)
+        sx = sum(m['position']['x'] for m in cluster_markers)
+        sy = sum(m['position']['y'] for m in cluster_markers)
+        sz = sum(m['position']['z'] for m in cluster_markers)
+        return {'x': sx / n, 'y': sy / n, 'z': sz / n}
+
+    def _compute_cluster_normal(self, cluster_markers):
+        # Align normals first, then average (prevents cancellation/inversion)
+        ref = None
+        vecs = []
+
+        for m in cluster_markers:
+            #sou tele so 0 in zato ne dela
+            nx = float(m['normal']['x'])
+            ny = float(m['normal']['y'])
+            nz = float(m['normal']['z'])
+            n = nx * nx + ny * ny + nz * nz
+            print(m['normal'])
+            if n < 1e-6:
                 continue
+            nx, ny, nz = nx / n, ny / n, nz / n
+            if ref is None:
+                ref = (nx, ny, nz)
+            else:
+                dot = nx * ref[0] + ny * ref[1] + nz * ref[2]
+                if dot < 0.0:
+                    nx, ny, nz = -nx, -ny, -nz
+            vecs.append((nx, ny, nz))
+            print("kva se dogaja2")
+            self.get_logger().info(f'Normal vector: ({nx:.2f}, {ny:.2f}, {nz:.2f})')
 
-            cluster = [marker]
-            used_indices.add(i)
+        if not vecs:
+            return {'x': 1.0, 'y': 0.0, 'z': 0.0}
 
-            for j, other_marker in enumerate(self.saved_markers):
-                if j in used_indices:
-                    continue
+        sx = sum(v[0] for v in vecs)
+        sy = sum(v[1] for v in vecs)
+        sz = sum(v[2] for v in vecs)
+        s = math.sqrt(sx * sx + sy * sy + sz * sz)
+        if s < 1e-6:
+            return {'x': 1.0, 'y': 0.0, 'z': 0.0}
+        return {'x': sx / s, 'y': sy / s, 'z': sz / s}
 
-                distance = math.dist(
-                    (marker['x'], marker['y'], marker['z']),
-                    (other_marker['x'], other_marker['y'], other_marker['z']),
-                )
+    def _build_single_face_goal(self, c, sign=1.0):
+        cx, cy = c['center']['x'], c['center']['y']
+        nx, ny = c['normal']['x'], c['normal']['y']
+        nxy = math.hypot(nx, ny)
+        if nxy < 1e-6:
+            nx, ny, nxy = 1.0, 0.0, 1.0
+        nx /= nxy
+        ny /= nxy
 
-                if distance <= clustering_threshold:
-                    cluster.append(other_marker)
-                    used_indices.add(j)
+        gx = cx + sign * self.face_goal_offset_m * nx
+        gy = cy + sign * self.face_goal_offset_m * ny
 
-            clusters.append(cluster)
+        # always face the face center
+        yaw = math.atan2(cy - gy, cx - gx)
+        qz = math.sin(yaw * 0.5)
+        qw = math.cos(yaw * 0.5)
 
-        return clusters
+        ps = PoseStamped()
+        ps.header.frame_id = 'map'
+        ps.header.stamp = self.get_clock().now().to_msg()
+        ps.pose.position.x = gx
+        ps.pose.position.y = gy
+        ps.pose.position.z = 0.0
+        ps.pose.orientation.x = 0.0
+        ps.pose.orientation.y = 0.0
+        ps.pose.orientation.z = qz
+        ps.pose.orientation.w = qw
+        return ps
+
+    def _build_face_goals_from_clusters(self, clusters):
+        return [self._build_single_face_goal(c, sign=1.0) for c in clusters]
+
+    def _publish_face_goals(self, goals):
+        msg = PoseArray()
+        msg.header.frame_id = 'map'
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.poses = []
+
+        for g in goals:
+            p = Pose()
+            p.position = g.pose.position
+            p.orientation = g.pose.orientation
+            msg.poses.append(p)
+
+        self.face_goals_pub.publish(msg)
+#        self.get_logger().info(f'Published {len(msg.poses)} face goals to /face_goals')
+
+    def _publish_face_goal_markers(self, goals, clusters):
+        marker_array = MarkerArray()
+        now = self.get_clock().now().to_msg()
+
+        for i, (g, c) in enumerate(zip(goals, clusters)):
+            # Goal sphere
+            goal_marker = Marker()
+            goal_marker.header.frame_id = 'map'
+            goal_marker.header.stamp = now
+            goal_marker.ns = 'face_goals'
+            goal_marker.id = i * 2
+            goal_marker.type = Marker.SPHERE
+            goal_marker.action = Marker.ADD
+            goal_marker.pose = g.pose
+            goal_marker.scale.x = 0.18
+            goal_marker.scale.y = 0.18
+            goal_marker.scale.z = 0.18
+            goal_marker.color.a = 1.0
+            goal_marker.color.r = 0.1
+            goal_marker.color.g = 0.9
+            goal_marker.color.b = 0.1
+            marker_array.markers.append(goal_marker)
+
+            # Arrow from goal -> face center (shows facing/interact direction)
+            arrow = Marker()
+            arrow.header.frame_id = 'map'
+            arrow.header.stamp = now
+            arrow.ns = 'face_goal_arrows'
+            arrow.id = i * 2 + 1
+            arrow.type = Marker.ARROW
+            arrow.action = Marker.ADD
+            arrow.scale.x = 0.04   # shaft diameter
+            arrow.scale.y = 0.08   # head diameter
+            arrow.scale.z = 0.10   # head length
+            arrow.color.a = 1.0
+            arrow.color.r = 1.0
+            arrow.color.g = 0.3
+            arrow.color.b = 0.1
+
+            p_goal = deepcopy(g.pose.position)
+            p_face = Pose().position
+            p_face.x = float(c['center']['x'])
+            p_face.y = float(c['center']['y'])
+            p_face.z = float(c['center']['z'])
+            arrow.points = [p_face, p_goal]
+            marker_array.markers.append(arrow)
+
+        self.face_goals_markers_pub.publish(marker_array)
+#        self.get_logger().info(f'Published {len(marker_array.markers)} markers to /face_goals_markers')
 
     def _persist_markers(self):
-        output_dir = os.path.dirname(self.output_file)
-        os.makedirs(output_dir, exist_ok=True)
-
         with self.marker_lock:
-            all_markers = deepcopy(self.saved_markers)
+            raw = deepcopy(self.saved_markers)
 
-        # Cluster all collected markers
-        self.get_logger().info(f'Clustering {len(all_markers)} collected markers...')
-        clusters = self._cluster_markers()
-        self.get_logger().info(f'Found {len(clusters)} clusters')
-
-        # Sort clusters by size (descending) and keep top 3
-        sorted_clusters = sorted(clusters, key=len, reverse=True)
-        top_clusters = sorted_clusters[:3]
-
-        self.get_logger().info(f'Keeping top 3 clusters with sizes: {[len(c) for c in top_clusters]}')
-
-        # Prepare payload with clustering info
-        clusters_data = []
-        for cluster_idx, cluster in enumerate(top_clusters, start=1):
-            cluster_center = self._compute_cluster_center(cluster)
-            clusters_data.append({
-                'cluster_id': cluster_idx,
-                'size': len(cluster),
-                'center': cluster_center,
-                'markers': cluster,
-            })
-
-        payload = {
-            'clustering_threshold_m': self.dedup_distance_m,
-            'total_detections': len(all_markers),
-            'total_clusters': len(clusters),
-            'top_3_clusters': clusters_data,
+        data = {
+            'cluster_radius_m': self.cluster_radius_m,
+            'face_goal_offset_m': self.face_goal_offset_m,
+            'total_detections': len(raw),
+            'top_3_clusters': [
+                {
+                    'cluster_id': c['cluster_id'],
+                    'size': c['size'],
+                    'center': c['center'],
+                    'normal': c['normal'],
+                }
+                for c in self.last_clusters
+            ],
+            'face_goals': [
+                {
+                    'x': g.pose.position.x,
+                    'y': g.pose.position.y,
+                    'z': g.pose.position.z,
+                    'qx': g.pose.orientation.x,
+                    'qy': g.pose.orientation.y,
+                    'qz': g.pose.orientation.z,
+                    'qw': g.pose.orientation.w,
+                }
+                for g in self.last_face_goals
+            ],
+            'detections': raw,
         }
 
-        with open(self.output_file, 'w', encoding='utf-8') as output_handle:
-            json.dump(payload, output_handle, indent=2)
+        with open(self.output_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
 
-    def _compute_cluster_center(self, cluster):
-        """
-        Compute the centroid of a cluster of markers.
-        """
-        if not cluster:
-            return {'x': 0, 'y': 0, 'z': 0}
-
-        avg_x = sum(m['x'] for m in cluster) / len(cluster)
-        avg_y = sum(m['y'] for m in cluster) / len(cluster)
-        avg_z = sum(m['z'] for m in cluster) / len(cluster)
-
-        return {'x': avg_x, 'y': avg_y, 'z': avg_z}
+#        self.get_logger().info(f'Saved results to {self.output_file}')
 
     def destroy_node(self):
         try:
-            self._persist_markers()
-        except Exception as exc:
-            self.get_logger().warn(f'Could not persist markers on shutdown: {exc}')
-        self.robot_commander.destroyNode()
+            self.robot_commander.destroy_node()
+        except Exception:
+            pass
         super().destroy_node()
-
 
 
 def main(args=None):
@@ -313,9 +434,15 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
+        try:
+            node.destroy_node()
+        except Exception:
+            pass
+        try:
+            if rclpy.ok():
+                rclpy.shutdown()
+        except Exception:
+            pass
 
 
 if __name__ == '__main__':
