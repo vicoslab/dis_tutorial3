@@ -174,9 +174,9 @@ class PatrolPeopleCollector(Node):
                 else:
                     self.get_logger().warn(f'⚠ Waypoint {index} finished with result: {result.name}')
 
-            self.get_logger().info('All waypoints visited. Persisting marker data...')
+            self.get_logger().info('All waypoints visited. Persisting and clustering marker data...')
             self._persist_markers()
-            self.get_logger().info(f'Patrol complete! Saved {len(self.saved_markers)} unique markers.')
+            self.get_logger().info(f'Patrol complete! Processed {len(self.saved_markers)} total detections.')
         except Exception as exc:
             self.get_logger().error(f'Patrol failed with exception: {exc}', exc_info=True)
         finally:
@@ -207,38 +207,100 @@ class PatrolPeopleCollector(Node):
         }
 
         with self.marker_lock:
-            if self._is_duplicate(marker_record):
-                return
             self.saved_markers.append(marker_record)
 
-        self.get_logger().info(
-            f'Saved new marker at ({marker_record["x"]:.2f}, {marker_record["y"]:.2f}, {marker_record["z"]:.2f}). '
-            f'Total unique markers: {len(self.saved_markers)}'
+        self.get_logger().debug(
+            f'Saved marker at ({marker_record["x"]:.2f}, {marker_record["y"]:.2f}, {marker_record["z"]:.2f}). '
+            f'Total collected: {len(self.saved_markers)}'
         )
 
-    def _is_duplicate(self, candidate):
-        for existing in self.saved_markers:
-            distance = math.dist(
-                (candidate['x'], candidate['y'], candidate['z']),
-                (existing['x'], existing['y'], existing['z']),
-            )
-            if distance <= self.dedup_distance_m:
-                return True
-        return False
+    def _cluster_markers(self):
+        """
+        Cluster markers using greedy distance-based clustering.
+        Returns list of clusters, each cluster is a list of marker records.
+        """
+        if not self.saved_markers:
+            return []
+
+        clustering_threshold = self.dedup_distance_m
+        clusters = []
+        used_indices = set()
+
+        for i, marker in enumerate(self.saved_markers):
+            if i in used_indices:
+                continue
+
+            cluster = [marker]
+            used_indices.add(i)
+
+            for j, other_marker in enumerate(self.saved_markers):
+                if j in used_indices:
+                    continue
+
+                distance = math.dist(
+                    (marker['x'], marker['y'], marker['z']),
+                    (other_marker['x'], other_marker['y'], other_marker['z']),
+                )
+
+                if distance <= clustering_threshold:
+                    cluster.append(other_marker)
+                    used_indices.add(j)
+
+            clusters.append(cluster)
+
+        return clusters
 
     def _persist_markers(self):
         output_dir = os.path.dirname(self.output_file)
         os.makedirs(output_dir, exist_ok=True)
 
         with self.marker_lock:
-            payload = {
-                'dedup_distance_m': self.dedup_distance_m,
-                'marker_count': len(self.saved_markers),
-                'markers': deepcopy(self.saved_markers),
-            }
+            all_markers = deepcopy(self.saved_markers)
+
+        # Cluster all collected markers
+        self.get_logger().info(f'Clustering {len(all_markers)} collected markers...')
+        clusters = self._cluster_markers()
+        self.get_logger().info(f'Found {len(clusters)} clusters')
+
+        # Sort clusters by size (descending) and keep top 3
+        sorted_clusters = sorted(clusters, key=len, reverse=True)
+        top_clusters = sorted_clusters[:3]
+
+        self.get_logger().info(f'Keeping top 3 clusters with sizes: {[len(c) for c in top_clusters]}')
+
+        # Prepare payload with clustering info
+        clusters_data = []
+        for cluster_idx, cluster in enumerate(top_clusters, start=1):
+            cluster_center = self._compute_cluster_center(cluster)
+            clusters_data.append({
+                'cluster_id': cluster_idx,
+                'size': len(cluster),
+                'center': cluster_center,
+                'markers': cluster,
+            })
+
+        payload = {
+            'clustering_threshold_m': self.dedup_distance_m,
+            'total_detections': len(all_markers),
+            'total_clusters': len(clusters),
+            'top_3_clusters': clusters_data,
+        }
 
         with open(self.output_file, 'w', encoding='utf-8') as output_handle:
             json.dump(payload, output_handle, indent=2)
+
+    def _compute_cluster_center(self, cluster):
+        """
+        Compute the centroid of a cluster of markers.
+        """
+        if not cluster:
+            return {'x': 0, 'y': 0, 'z': 0}
+
+        avg_x = sum(m['x'] for m in cluster) / len(cluster)
+        avg_y = sum(m['y'] for m in cluster) / len(cluster)
+        avg_z = sum(m['z'] for m in cluster) / len(cluster)
+
+        return {'x': avg_x, 'y': avg_y, 'z': avg_z}
 
     def destroy_node(self):
         try:
