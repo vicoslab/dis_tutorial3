@@ -183,22 +183,22 @@ class detect_faces(Node):
 			except TransformException as te:
 				self.get_logger().info(f"Cound not get the transform: {te}")
 
-			self.markers.append(marker_in_map_frame)
+			# self.markers.append(marker_in_map_frame)
 			self.marker_pub.publish(marker)
 
-	def merge_clusters(self):
-		centers = []
-		for p in self.markers:
-			p = p.pose.position
-			merged = False
-			for i, c in enumerate(centers):
-				if np.linalg.norm(np.array(p) - np.array(c)) <= 0.8:
-					centers[i] = ((np.array(c) + np.array(p)) / 2.0).tolist()
-					merged = True
-					break
-			if not merged:
-				centers.append(p)
-		self.cluster_centers = centers
+	# def merge_clusters(self):
+	# 	centers = []
+	# 	for p in self.markers:
+	# 		p = p.pose.position
+	# 		merged = False
+	# 		for i, c in enumerate(centers):
+	# 			if np.linalg.norm(np.array(p) - np.array(c)) <= 0.8:
+	# 				centers[i] = ((np.array(c) + np.array(p)) / 2.0).tolist()
+	# 				merged = True
+	# 				break
+	# 		if not merged:
+	# 			centers.append(p)
+	# 	self.cluster_centers = centers
 
 	def create_marker(self, point_stamped, marker_id, lifetime=30.0):
 		"""You can see the description of the Marker message here: https://docs.ros2.org/galactic/api/visualization_msgs/msg/Marker.html"""
