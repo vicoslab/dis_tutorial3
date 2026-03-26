@@ -204,6 +204,11 @@ class PatrolPeopleCollector(Node):
             'x': x,
             'y': y,
             'z': z,
+            'normal': {
+                'x': float(marker_msg.pose.orientation.x),
+                'y': float(marker_msg.pose.orientation.y),
+                'z': float(marker_msg.pose.orientation.z),
+            },
         }
 
         with self.marker_lock:

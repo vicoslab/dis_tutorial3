@@ -18,6 +18,7 @@ from tf2_ros.transform_listener import TransformListener
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import numpy as np
+import math
 
 from rclpy.duration import Duration
 from ultralytics import YOLO
@@ -122,6 +123,10 @@ class detect_faces(Node):
 			# read center coordinates
 			d = a[y,x,:]
 
+			# Skip invalid pointcloud samples.
+			if any(math.isnan(float(v)) for v in d):
+				continue
+
 			# create marker
 			marker = Marker()
 
@@ -165,13 +170,20 @@ class detect_faces(Node):
 				trans = self.tf_buffer.lookup_transform("map", data.header.frame_id, time_now, timeout)
 				self.get_logger().info(f"Looks like the transform is available.")
 
+				# If we detect a face, approximate the face normal as person->camera direction.
+				normal_sensor_frame = self._normalize_vector((-float(d[0]), -float(d[1]), -float(d[2])))
+				normal_map_frame = self._rotate_vector_by_quaternion(
+					normal_sensor_frame,
+					trans.transform.rotation,
+				)
+
 				# Now we apply the transform to transform the point_in_robot_frame to the map frame
 				# The header in the result will be copied from the Header of the transform
 				point_in_map_frame = tfg.do_transform_point(point_in_robot_frame, trans)
 				self.get_logger().info(f"We transformed a PointStamped!")
 
 				# If the transformation exists, create a marker from the point, in order to visualize it in Rviz
-				marker_in_map_frame = self.create_marker(point_in_map_frame, self.new_marker_id)
+				marker_in_map_frame = self.create_marker(point_in_map_frame, self.new_marker_id, normal_map_frame)
 
 				# Publish the marker
 				self.marker_new_pub.publish(marker_in_map_frame)
@@ -200,7 +212,37 @@ class detect_faces(Node):
 	# 			centers.append(p)
 	# 	self.cluster_centers = centers
 
-	def create_marker(self, point_stamped, marker_id, lifetime=30.0):
+	def _normalize_vector(self, vec):
+		norm = np.linalg.norm(vec)
+		if norm == 0.0:
+			return (0.0, 0.0, 0.0)
+		return (float(vec[0] / norm), float(vec[1] / norm), float(vec[2] / norm))
+
+	def _rotate_vector_by_quaternion(self, vec, q):
+		x = float(q.x)
+		y = float(q.y)
+		z = float(q.z)
+		w = float(q.w)
+
+		# Rotate a vector by a unit quaternion via the equivalent rotation matrix.
+		r00 = 1.0 - 2.0 * (y * y + z * z)
+		r01 = 2.0 * (x * y - z * w)
+		r02 = 2.0 * (x * z + y * w)
+		r10 = 2.0 * (x * y + z * w)
+		r11 = 1.0 - 2.0 * (x * x + z * z)
+		r12 = 2.0 * (y * z - x * w)
+		r20 = 2.0 * (x * z - y * w)
+		r21 = 2.0 * (y * z + x * w)
+		r22 = 1.0 - 2.0 * (x * x + y * y)
+
+		vx, vy, vz = vec
+		return (
+			float(r00 * vx + r01 * vy + r02 * vz),
+			float(r10 * vx + r11 * vy + r12 * vz),
+			float(r20 * vx + r21 * vy + r22 * vz),
+		)
+
+	def create_marker(self, point_stamped, marker_id, normal=None, lifetime=30.0):
 		"""You can see the description of the Marker message here: https://docs.ros2.org/galactic/api/visualization_msgs/msg/Marker.html"""
 		marker = Marker()
 
@@ -226,6 +268,13 @@ class detect_faces(Node):
 		marker.pose.position.x = point_stamped.point.x
 		marker.pose.position.y = point_stamped.point.y
 		marker.pose.position.z = point_stamped.point.z
+
+		# Reuse orientation fields to carry the estimated face normal vector.
+		if normal is not None:
+			marker.pose.orientation.x = float(normal[0])
+			marker.pose.orientation.y = float(normal[1])
+			marker.pose.orientation.z = float(normal[2])
+			marker.pose.orientation.w = 0.0
 
 #		marker.lifetime = 0
 
