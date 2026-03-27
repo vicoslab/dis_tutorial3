@@ -8,7 +8,7 @@ from sensor_msgs.msg import Image, PointCloud2
 from sensor_msgs_py import point_cloud2 as pc2
 
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import Point, PointStamped
 
 import tf2_geometry_msgs as tfg
 from tf2_ros import TransformException
@@ -104,63 +104,111 @@ class detect_faces(Node):
 			
 		except CvBridgeError as e:
 			print(e)
-def pointcloud_callback(self, data):
-        if not self.rings:
-            return
 
-        # get point cloud attributes
-        height = data.height
-        width = data.width
+	def pointcloud_callback(self, data):
 
-        # 1. OPTIMIZACIJA: Preberi točke enkrat, ne v zanki (da ne "šteka")
-        a = pc2.read_points_numpy(data, field_names=("x", "y", "z"))
-        a = a.reshape((height, width, 3))
+		# get point cloud attributes
+		height = data.height
+		width = data.width
+		point_step = data.point_step
+		row_step = data.row_step		
 
-        # iterate over ring coordinates
-        for x, y in self.rings:
-            
-            # Preveri meje (varnost)
-            if x >= width or y >= height:
-                continue
+		# iterate over face coordinates
+		for x,y in self.faces:
 
-            # read 3D coordinates from point cloud
-            d = a[y, x, :]
+			# get 3-channel representation of the poitn cloud in numpy format
+			a = pc2.read_points_numpy(data, field_names= ("x", "y", "z"))
+			a = a.reshape((height,width,3))
 
-            # Preveri, če je točka sploh veljavna (da ni NaN)
-            if np.isnan(d[0]) or np.isinf(d[0]):
-                continue
+			# read center coordinates
+			d = a[y,x,:]
 
-            # Točka v frame-u kamere (v simulatorju je to običajno oakd_rgb_camera_optical_frame)
-            point_in_cam_frame = PointStamped()
-            point_in_cam_frame.header.frame_id = data.header.frame_id
-            point_in_cam_frame.header.stamp = data.header.stamp
+			# Skip invalid pointcloud samples.
+			if any(math.isnan(float(v)) for v in d):
+				continue
 
-            point_in_cam_frame.point.x = float(d[0])
-            point_in_cam_frame.point.y = float(d[1])
-            point_in_cam_frame.point.z = float(d[2])
+			# create marker
+			marker = Marker()
 
-            time_now = rclpy.time.Time() # Uporabi Time(0) ali Time() za najnovejšo transformacijo
-            timeout = Duration(seconds=0.1)
+			marker.header.frame_id = "/base_link"
+			marker.header.stamp = data.header.stamp
 
-            try:
-                # 2. KLJUČNI POPRAVEK: Transformacija iz frame-a podatkov (kamere) v MAPO
-                trans = self.tf_buffer.lookup_transform("map", data.header.frame_id, data.header.stamp, timeout)
-                
-                # Transformacija točke
-                point_in_map_frame = tfg.do_transform_point(point_in_cam_frame, trans)
+			marker.type = 2
+			marker.id = 0
 
-                # 3. Ustvari marker (ID se mora povečevati, da ne brišeš starih)
-                marker_in_map_frame = self.create_marker(point_in_map_frame, self.new_marker_id)
+			# Set the scale of the marker
+			scale = 0.1
+			marker.scale.x = scale
+			marker.scale.y = scale
+			marker.scale.z = scale
 
-                # Publish
-                self.marker_new_pub.publish(marker_in_map_frame)
-                self.new_marker_id += 1
-                
-                self.get_logger().info(f"Marker objavljen na: {point_in_map_frame.point.x:.2f}, {point_in_map_frame.point.y:.2f}")
+			# Set the color
+			marker.color.r = 1.0
+			marker.color.g = 1.0
+			marker.color.b = 1.0
+			marker.color.a = 1.0
 
-            except TransformException as te:
-                self.get_logger().info(f"Cound not get the transform: {te}")
-				
+			# Set the pose of the marker
+			marker.pose.position.x = float(d[0])
+			marker.pose.position.y = float(d[1])
+			marker.pose.position.z = float(d[2])
+
+			#transformation of marker
+			point_in_robot_frame = PointStamped()
+			point_in_robot_frame.header.frame_id = "/base_link"
+			point_in_robot_frame.header.stamp = self.get_clock().now().to_msg()
+
+			point_in_robot_frame.point.x = float(d[0])
+			point_in_robot_frame.point.y = float(d[1])
+			point_in_robot_frame.point.z = float(d[2])
+			time_now = rclpy.time.Time()
+			timeout = Duration(seconds=0.1)
+			print(data.header.frame_id)
+			try:
+				# An example of how you can get a transform from /base_link frame to the /map frame
+				# as it is at time_now, wait for timeout for it to become available
+				trans = self.tf_buffer.lookup_transform("map", data.header.frame_id, time_now, timeout)
+				self.get_logger().info(f"Looks like the transform is available.")
+
+				# If we detect a face, approximate the face normal as person->camera direction.
+				normal_sensor_frame = self._normalize_vector((-float(d[0]), -float(d[1]), -float(d[2])))
+				normal_map_frame = self._rotate_vector_by_quaternion(
+					normal_sensor_frame,
+					trans.transform.rotation,
+				)
+				normal_map_frame = self._normalize_vector(normal_map_frame)
+				self.get_logger().info(
+					f"Normal debug | sensor=({normal_sensor_frame[0]:.3f}, {normal_sensor_frame[1]:.3f}, {normal_sensor_frame[2]:.3f}) "
+					f"map=({normal_map_frame[0]:.3f}, {normal_map_frame[1]:.3f}, {normal_map_frame[2]:.3f})"
+				)
+
+				# Now we apply the transform to transform the point_in_robot_frame to the map frame
+				# The header in the result will be copied from the Header of the transform
+				point_in_map_frame = tfg.do_transform_point(point_in_robot_frame, trans)
+				self.get_logger().info(f"We transformed a PointStamped!")
+
+				# If the transformation exists, create a marker from the point, in order to visualize it in Rviz
+				marker_in_map_frame = self.create_marker(point_in_map_frame, self.new_marker_id, normal_map_frame)
+				if len(marker_in_map_frame.points) >= 2:
+					p0 = marker_in_map_frame.points[0]
+					p1 = marker_in_map_frame.points[1]
+					self.get_logger().info(
+						f"Normal debug marker points | p0=({p0.x:.3f}, {p0.y:.3f}, {p0.z:.3f}) "
+						f"p1=({p1.x:.3f}, {p1.y:.3f}, {p1.z:.3f})"
+					)
+
+				# Publish the marker
+				self.marker_new_pub.publish(marker_in_map_frame)
+				self.get_logger().info(f"The marker has been published to /breadcrumbs. You are able to visualize it in Rviz")
+
+				# Increase the marker_id, so we dont overwrite the same marker.
+				self.new_marker_id += 1
+
+			except TransformException as te:
+				self.get_logger().info(f"Cound not get the transform: {te}")
+
+			# self.markers.append(marker_in_map_frame)
+			self.marker_pub.publish(marker)
 
 	# def merge_clusters(self):
 	# 	centers = []
@@ -239,6 +287,18 @@ def pointcloud_callback(self, data):
 			marker.pose.orientation.y = float(normal[1])
 			marker.pose.orientation.z = float(normal[2])
 			marker.pose.orientation.w = 0.0
+
+			# Collector expects points[0]=face position and points[1]=face+normal.
+			p0 = Point()
+			p0.x = float(point_stamped.point.x)
+			p0.y = float(point_stamped.point.y)
+			p0.z = float(point_stamped.point.z)
+
+			p1 = Point()
+			p1.x = float(p0.x + normal[0])
+			p1.y = float(p0.y + normal[1])
+			p1.z = float(p0.z + normal[2])
+			marker.points = [p0, p1]
 
 #		marker.lifetime = 0
 

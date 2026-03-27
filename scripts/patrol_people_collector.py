@@ -79,6 +79,7 @@ class PatrolPeopleCollector(Node):
         self.saved_markers = []
         self.last_clusters = []
         self.last_face_goals = []
+        self._persist_markers()
 
         self.patrol_thread = threading.Thread(target=self._run_patrol, daemon=True)
         self.patrol_thread.start()
@@ -161,13 +162,16 @@ class PatrolPeopleCollector(Node):
                     #self.get_logger().warn(f'Mirrored face goal {i} also failed: {result2}')
                     pass
 
-            self._persist_markers()
             #self.get_logger().info('Patrol + face interaction completed.')
 
         except Exception as e:
             #self.get_logger().error(f'Patrol failed with exception: {e}')
             pass
         finally:
+            try:
+                self._persist_markers()
+            except Exception:
+                pass
             self.patrol_running = False
 
     def _marker_callback(self, marker_msg: Marker):
@@ -412,7 +416,7 @@ class PatrolPeopleCollector(Node):
         with open(self.output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
-#        self.get_logger().info(f'Saved results to {self.output_file}')
+        self.get_logger().info(f'Saved results to {self.output_file}')
 
     def destroy_node(self):
         try:
