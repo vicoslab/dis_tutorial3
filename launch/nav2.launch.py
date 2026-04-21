@@ -40,7 +40,7 @@ ARGUMENTS = [
 
 
 def launch_setup(context, *args, **kwargs):
-    pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
+    #pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
 
     nav2_params = LaunchConfiguration('params_file')
     namespace = LaunchConfiguration('namespace')
@@ -50,7 +50,7 @@ def launch_setup(context, *args, **kwargs):
     if (namespace_str and not namespace_str.startswith('/')):
         namespace_str = '/' + namespace_str
 
-    launch_nav2 = PathJoinSubstitution([pkg_nav2_bringup, 'launch', 'navigation_launch.py'])
+    launch_nav2 = PathJoinSubstitution([pkg_dis_tutorial3, 'launch', 'fixed_navigation.launch.py'])
 
     nav2 = GroupAction([
         PushRosNamespace(namespace),

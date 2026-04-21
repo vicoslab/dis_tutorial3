@@ -25,7 +25,7 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 ARGUMENTS = [
     DeclareLaunchArgument('namespace', default_value='', description='Robot namespace'),
     DeclareLaunchArgument('rviz', default_value='true', choices=['true', 'false'], description='Start rviz.'),
-    DeclareLaunchArgument('world', default_value='bird_demo1', description='Simulation World'),
+    DeclareLaunchArgument('world', default_value='task2_blue_demo', description='Simulation World'),
     DeclareLaunchArgument('model', default_value='standard', choices=['standard', 'lite'], description='Turtlebot4 Model'),
     DeclareLaunchArgument('use_sim_time', default_value='true', choices=['true', 'false'], description='use_sim_time')
 ]

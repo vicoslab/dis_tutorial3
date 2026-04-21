@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='ASCII'?>
 <sdf version='1.7'>
-  <world name='task2'>
+  <world name='task2_yellow_demo'>
     <physics name='1ms' type='ignored'>
         <max_step_size>0.003</max_step_size>
         <real_time_factor>1</real_time_factor>
@@ -63,7 +63,7 @@
 					<visual name='ground_visual'>
 						<geometry>
 							<mesh>
-								<uri>file://task2_meshes/map.obj</uri>
+								<uri>file://task2_yellow_demo_meshes/map.obj</uri>
 							</mesh>
 						</geometry>
 					</visual>
@@ -71,7 +71,7 @@
           <collision name='ground_collision'>
               <geometry>
                   <mesh>
-                      <uri>file://task2_meshes/collider.obj</uri>
+                      <uri>file://task2_yellow_demo_meshes/collider.obj</uri>
                   </mesh>
               </geometry>
           </collision>
