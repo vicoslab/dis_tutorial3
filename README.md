@@ -221,12 +221,19 @@ You can also change the `default_value` of the `world` in the `.launch` file its
 DeclareLaunchArgument('world', default_value='task1_blue_demo', description='Ignition World'),
 ```
 
-There are three example worlds available for this year's Task1, which use can use to build your map and test run your implementation:
+There are three example worlds available for this year's Task 1, which use can use to build your map and test run your implementation:
 - `task1_blue_demo`
 - `task1_green_demo`
 - `task1_yellow_demo`
 
 ![task_1_sim](figs/task1_worlds.jpg "Three demo worlds")
+
+As well as three Task 2 demo worlds:
+- `task2_blue_demo`
+- `task2_green_demo`
+- `task2_yellow_demo`
+
+![task_2_sim](figs/task2_worlds.png "Three demo worlds")
 
 ### Sending movement goals from a node
 
