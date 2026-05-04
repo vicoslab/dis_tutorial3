@@ -99,7 +99,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person13.png
+map_Kd maria_she_her_delivery_driver.png
 
 newmtl face4
 Ns 250.000000
@@ -109,7 +109,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person7.png
+map_Kd luka_he_him_accountant.png
 
 newmtl face6
 Ns 250.000000
@@ -119,7 +119,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person31.jpg
+map_Kd elena_she_her_forklift_driver.png
 
 newmtl face7
 Ns 250.000000
@@ -129,7 +129,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person32.jpg
+map_Kd fred_he_him_visitor.png
 
 newmtl face_cto
 Ns 250.000000
@@ -139,7 +139,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd cto.jpg
+map_Kd jeff_he_him_cto.png
 
 newmtl fakering1
 Ns 250.000000
@@ -199,7 +199,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate1.jpg
+map_Kd damaged15.png
 
 newmtl plate2
 Ns 0.000000
@@ -209,7 +209,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate2.jpg
+map_Kd damaged10.png
 
 newmtl plate3
 Ns 0.000000
@@ -219,7 +219,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate3.jpg
+map_Kd damaged11.png
 
 newmtl plate4
 Ns 0.000000
@@ -229,7 +229,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate4.jpg
+map_Kd damaged12.png
 
 newmtl plate5
 Ns 0.000000
@@ -239,7 +239,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd good1.png
 
 newmtl plate6
 Ns 0.000000
@@ -249,7 +249,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd good2.png
 
 newmtl plate7
 Ns 0.000000
@@ -259,7 +259,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd damaged13.png
 
 newmtl plate8
 Ns 0.000000
@@ -269,7 +269,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd damaged14.png
 
 newmtl qr_barrels
 Ns 250.000000

@@ -91,7 +91,7 @@ d 1.000000
 illum 1
 map_Kd colormap.png
 
-newmtl face3
+newmtl face3.001
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -99,9 +99,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person28.jpg
+map_Kd felix_he_him_belt_technician.png
 
-newmtl face4
+newmtl face4.001
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -109,9 +109,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person21.png
+map_Kd laura_she_her_middle_manager.png
 
-newmtl face6
+newmtl face6.001
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -119,9 +119,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person29.jpg
+map_Kd victor_he_him_plc_programmer.png
 
-newmtl face7
+newmtl face7.001
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -129,7 +129,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person18.png
+map_Kd anita_she_her_quality_inspector.png
 
 newmtl face_cto
 Ns 250.000000
@@ -139,7 +139,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd cto.jpg
+map_Kd jeff_he_him_cto.png
 
 newmtl fakering1
 Ns 250.000000
@@ -199,7 +199,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate1.jpg
+map_Kd damaged15.png
 
 newmtl plate2
 Ns 0.000000
@@ -209,7 +209,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate2.jpg
+map_Kd damaged10.png
 
 newmtl plate3
 Ns 0.000000
@@ -219,7 +219,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate3.jpg
+map_Kd damaged11.png
 
 newmtl plate4
 Ns 0.000000
@@ -229,7 +229,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate4.jpg
+map_Kd damaged12.png
 
 newmtl plate5
 Ns 0.000000
@@ -239,7 +239,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd good1.png
 
 newmtl plate6
 Ns 0.000000
@@ -249,7 +249,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd good2.png
 
 newmtl plate7
 Ns 0.000000
@@ -259,7 +259,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd damaged13.png
 
 newmtl plate8
 Ns 0.000000
@@ -269,7 +269,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd damaged14.png
 
 newmtl qr_barrels
 Ns 250.000000
@@ -280,6 +280,16 @@ Ni 1.450000
 d 1.000000
 illum 2
 map_Kd qr_barrels.png
+
+newmtl qr_break
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd qr_break.png
 
 newmtl qr_bridge
 Ns 250.000000

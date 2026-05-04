@@ -91,7 +91,7 @@ d 1.000000
 illum 1
 map_Kd colormap.png
 
-newmtl face3
+newmtl face3.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -99,9 +99,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person20.png
+map_Kd anna_she_her_visitor.png
 
-newmtl face4
+newmtl face4.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -109,9 +109,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person27.jpg
+map_Kd sofia_she_her_laser_calibrator.png
 
-newmtl face6
+newmtl face6.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -119,9 +119,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person22.png
+map_Kd sara_she_her_inventory_manager.png
 
-newmtl face7
+newmtl face7.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -129,7 +129,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd person35.jpg
+map_Kd david_he_him_welder.png
 
 newmtl face_cto
 Ns 250.000000
@@ -139,7 +139,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd cto.jpg
+map_Kd jeff_he_him_cto.png
 
 newmtl fakering1
 Ns 250.000000
@@ -191,7 +191,7 @@ d 1.000000
 illum 2
 map_Kd objects.jpg
 
-newmtl plate1
+newmtl plate1.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -199,9 +199,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate1.jpg
+map_Kd damaged19.png
 
-newmtl plate2
+newmtl plate2.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -209,9 +209,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate2.jpg
+map_Kd good2.png
 
-newmtl plate3
+newmtl plate3.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -219,9 +219,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate3.jpg
+map_Kd good5.png
 
-newmtl plate4
+newmtl plate4.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -229,9 +229,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate4.jpg
+map_Kd damaged26.png
 
-newmtl plate5
+newmtl plate5.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -239,9 +239,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd damaged25.png
 
-newmtl plate6
+newmtl plate6.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -249,9 +249,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd good2.png
 
-newmtl plate7
+newmtl plate7.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -259,9 +259,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd damaged21.png
 
-newmtl plate8
+newmtl plate8.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
@@ -269,7 +269,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd plate5.jpg
+map_Kd damaged20.png
 
 newmtl qr_barrels
 Ns 250.000000
